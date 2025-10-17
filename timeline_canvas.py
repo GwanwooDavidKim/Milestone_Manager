@@ -1,6 +1,9 @@
 """타임라인 캔버스 모듈 - 라이트 모드 타임라인과 노드 시각화"""
 
-from PyQt6.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsPathItem, QCheckBox, QGraphicsProxyWidget, QMessageBox, QDialog, QVBoxLayout, QTextEdit, QPushButton
+from PyQt6.QtWidgets import (QWidget, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, 
+                              QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsRectItem, 
+                              QGraphicsPathItem, QCheckBox, QGraphicsProxyWidget, QMessageBox, 
+                              QDialog, QVBoxLayout, QTextEdit, QPushButton)
 from PyQt6.QtCore import Qt, QPointF, QRectF
 from PyQt6.QtGui import QPen, QBrush, QColor, QPainter, QPolygonF, QPainterPath, QFont
 from typing import List, Dict, Optional, Tuple
@@ -359,44 +362,50 @@ class TimelineCanvas(QWidget):
         # 이모지 위치 계산
         emoji_x = x + 15
         
-        # 첨부파일 아이콘
+        # 첨부파일 아이콘 (QPushButton 사용)
         if attachment:
-            attach_text = self.scene.addText("📎")
-            attach_text.setFont(QFont("Apple Color Emoji", 12))
-            attach_text.setPos(emoji_x, y - 15)
-            attach_text.setToolTip(f"파일: {attachment}")
+            attach_btn = QPushButton("📎")
+            attach_btn.setFixedSize(24, 24)
+            attach_btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent;
+                    border: none;
+                    font-size: 16px;
+                    padding: 0px;
+                }
+                QPushButton:hover {
+                    background: rgba(0, 122, 255, 0.1);
+                    border-radius: 4px;
+                }
+            """)
+            attach_btn.setToolTip(f"파일: {attachment}")
+            attach_btn.clicked.connect(lambda: self._open_attachment(attachment))
             
-            # 클릭 가능하게 설정
-            attach_text.setFlag(QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-            attach_text.setAcceptHoverEvents(True)
-            
-            # 마우스 이벤트 직접 처리
-            def make_attachment_handler(file_path):
-                def handler(event):
-                    self._open_attachment(file_path)
-                return handler
-            
-            attach_text.mousePressEvent = make_attachment_handler(attachment)
-            emoji_x += 20
+            attach_proxy = self.scene.addWidget(attach_btn)
+            attach_proxy.setPos(emoji_x, y - 15)
+            emoji_x += 26
         
-        # 메모 아이콘
+        # 메모 아이콘 (QPushButton 사용)
         if memo:
-            memo_text = self.scene.addText("📝")
-            memo_text.setFont(QFont("Apple Color Emoji", 12))
-            memo_text.setPos(emoji_x, y - 15)
-            memo_text.setToolTip("메모 보기")
+            memo_btn = QPushButton("📝")
+            memo_btn.setFixedSize(24, 24)
+            memo_btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent;
+                    border: none;
+                    font-size: 16px;
+                    padding: 0px;
+                }
+                QPushButton:hover {
+                    background: rgba(0, 122, 255, 0.1);
+                    border-radius: 4px;
+                }
+            """)
+            memo_btn.setToolTip("메모 보기")
+            memo_btn.clicked.connect(lambda: self._show_memo(memo))
             
-            # 클릭 가능하게 설정
-            memo_text.setFlag(QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-            memo_text.setAcceptHoverEvents(True)
-            
-            # 마우스 이벤트 직접 처리
-            def make_memo_handler(memo_content):
-                def handler(event):
-                    self._show_memo(memo_content)
-                return handler
-            
-            memo_text.mousePressEvent = make_memo_handler(memo)
+            memo_proxy = self.scene.addWidget(memo_btn)
+            memo_proxy.setPos(emoji_x, y - 15)
         
         self.node_items[node_id] = node_item
     
