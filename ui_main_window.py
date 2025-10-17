@@ -35,12 +35,12 @@ class MainWindow(QMainWindow):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #007AFF, stop:1 #0051D5);
                 border: none;
-                border-radius: 10px;
+                border-radius: 6px;
                 color: white;
-                padding: 14px 24px;
-                font-size: 14px;
+                padding: 8px 16px;
+                font-size: 13px;
                 font-weight: bold;
-                min-height: 16px;
+                min-height: 10px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -81,12 +81,6 @@ class MainWindow(QMainWindow):
         save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         save_shortcut.activated.connect(self.save_data)
         
-        add_node_shortcut = QShortcut(QKeySequence("Ctrl+N"), self)
-        add_node_shortcut.activated.connect(self._add_node_shortcut)
-        
-        edit_node_shortcut = QShortcut(QKeySequence("Ctrl+E"), self)
-        edit_node_shortcut.activated.connect(self._edit_node_shortcut)
-        
         delete_node_shortcut = QShortcut(QKeySequence("Ctrl+D"), self)
         delete_node_shortcut.activated.connect(self._delete_node_shortcut)
     
@@ -101,11 +95,11 @@ class MainWindow(QMainWindow):
         
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
-            font-size: 28px;
+            font-size: 22px;
             font-weight: bold;
             color: #1d1d1f;
-            margin-bottom: 10px;
-            padding: 10px;
+            margin-bottom: 5px;
+            padding: 5px;
         """)
         main_layout.addWidget(title_label)
         
@@ -386,8 +380,8 @@ class MainWindow(QMainWindow):
         """)
         
         block_layout = QVBoxLayout(block)
-        block_layout.setContentsMargins(20, 20, 20, 20)
-        block_layout.setSpacing(15)
+        block_layout.setContentsMargins(15, 15, 15, 15)
+        block_layout.setSpacing(10)
         
         header = QHBoxLayout()
         
@@ -416,7 +410,7 @@ class MainWindow(QMainWindow):
         
         title = QLabel(milestone.get("title", ""))
         title.setStyleSheet("""
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
             color: #1d1d1f;
         """)
@@ -424,7 +418,7 @@ class MainWindow(QMainWindow):
         
         subtitle = QLabel(milestone.get("subtitle", ""))
         subtitle.setStyleSheet("""
-            font-size: 14px;
+            font-size: 12px;
             color: #86868b;
         """)
         title_layout.addWidget(subtitle)
@@ -434,16 +428,16 @@ class MainWindow(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
         
-        add_btn = QPushButton("➕ Node 추가\n(Ctrl+N)")
+        add_btn = QPushButton("➕ Node 추가")
         add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
         btn_layout.addWidget(add_btn)
         
-        edit_btn = QPushButton("✏️ Node 수정\n(Ctrl+E)")
+        edit_btn = QPushButton("✏️ Node 수정")
         edit_btn.setObjectName("secondary")
         edit_btn.clicked.connect(lambda: self._edit_node(milestone["id"]))
         btn_layout.addWidget(edit_btn)
         
-        delete_btn = QPushButton("🗑️ Node 삭제\n(Ctrl+D)")
+        delete_btn = QPushButton("🗑️ Node 삭제 (Ctrl+D)")
         delete_btn.setObjectName("danger")
         delete_btn.clicked.connect(lambda: self._delete_node(milestone["id"]))
         btn_layout.addWidget(delete_btn)
