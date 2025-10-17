@@ -131,6 +131,27 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(export_btn)
         
         toolbar.addStretch()
+        
+        # 필터 상태 표시 레이블
+        self.filter_status_label = QLabel("")
+        self.filter_status_label.setStyleSheet("""
+            color: #007AFF;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 8px 12px;
+            background: #E3F2FD;
+            border-radius: 6px;
+        """)
+        self.filter_status_label.hide()
+        toolbar.addWidget(self.filter_status_label)
+        
+        # 필터 해제 버튼
+        self.clear_filter_btn = QPushButton("✖ 필터 해제")
+        self.clear_filter_btn.setObjectName("secondary")
+        self.clear_filter_btn.clicked.connect(self.clear_filter)
+        self.clear_filter_btn.hide()
+        toolbar.addWidget(self.clear_filter_btn)
+        
         main_layout.addLayout(toolbar)
         
         scroll = QScrollArea()
@@ -240,7 +261,34 @@ class MainWindow(QMainWindow):
         dialog = SearchFilterDialog(self)
         if dialog.exec() and dialog.result:
             self.filter_settings = dialog.result
+            self._update_filter_status()
             self._refresh_ui()
+    
+    def clear_filter(self):
+        """필터 해제"""
+        self.filter_settings = None
+        self._update_filter_status()
+        self._refresh_ui()
+    
+    def _update_filter_status(self):
+        """필터 상태 표시 업데이트"""
+        if self.filter_settings:
+            status_parts = []
+            keyword = self.filter_settings.get("keyword", "")
+            shape = self.filter_settings.get("shape", "")
+            
+            if keyword:
+                status_parts.append(f"키워드: '{keyword}'")
+            if shape:
+                status_parts.append(f"모양: {shape}")
+            
+            if status_parts:
+                self.filter_status_label.setText("🔍 필터 적용 중: " + " | ".join(status_parts))
+                self.filter_status_label.show()
+                self.clear_filter_btn.show()
+        else:
+            self.filter_status_label.hide()
+            self.clear_filter_btn.hide()
     
     def export_image(self):
         """이미지 내보내기"""
@@ -292,24 +340,21 @@ class MainWindow(QMainWindow):
         self.scroll_layout.addStretch()
     
     def _should_show_milestone(self, milestone: Dict) -> bool:
-        """필터링"""
+        """필터링 - 제목과 부제목에서만 검색"""
         if not self.filter_settings:
             return True
         
         keyword = self.filter_settings.get("keyword", "")
         shape_filter = self.filter_settings.get("shape")
         
+        # 키워드 검색: 제목과 부제목에서만
         if keyword:
-            if keyword.lower() not in milestone.get("title", "").lower() and \
-               keyword.lower() not in milestone.get("subtitle", "").lower():
-                has_keyword = False
-                for node in milestone.get("nodes", []):
-                    if keyword.lower() in node.get("content", "").lower():
-                        has_keyword = True
-                        break
-                if not has_keyword:
-                    return False
+            title = milestone.get("title", "").lower()
+            subtitle = milestone.get("subtitle", "").lower()
+            if keyword.lower() not in title and keyword.lower() not in subtitle:
+                return False
         
+        # 모양 필터
         if shape_filter:
             has_matching_shape = any(
                 node.get("shape") == shape_filter

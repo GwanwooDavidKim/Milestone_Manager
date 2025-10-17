@@ -40,7 +40,7 @@ class TimelineCanvas(QWidget):
         self.draw_timeline()
     
     def draw_timeline(self):
-        """타임라인과 노드를 그립니다 - 연도별 균등 배치"""
+        """타임라인과 노드를 그립니다 - 빈 연도 포함"""
         self.scene.clear()
         self.node_items.clear()
         self.node_checkboxes.clear()
@@ -61,17 +61,20 @@ class TimelineCanvas(QWidget):
         
         sorted_nodes = sorted(nodes, key=lambda n: self._parse_date(n.get("date", "")))
         
-        # 연도 추출 (간단하게)
-        years = set()
+        # 연도 추출 (빈 연도 포함)
+        years_set = set()
         for node in sorted_nodes:
             date_val = self._parse_date(node.get("date", ""))
             year = date_val // 100
-            years.add(year)
+            years_set.add(year)
         
-        years = sorted(list(years))
-        
-        if not years:
+        if not years_set:
             return
+        
+        # 최소/최대 연도 사이의 모든 연도 포함
+        min_year = min(years_set)
+        max_year = max(years_set)
+        years = list(range(min_year, max_year + 1))
         
         timeline_y = height / 2
         start_x = 80
@@ -96,7 +99,6 @@ class TimelineCanvas(QWidget):
             
             # 각 분기별 위치 계산
             for quarter in [1, 2, 3, 4]:
-                # 분기를 년도 내에서 균등하게 배치
                 quarter_offset = (quarter - 1) * (year_spacing / 4)
                 x_pos = year_x + quarter_offset
                 
@@ -110,9 +112,9 @@ class TimelineCanvas(QWidget):
                 quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
                 quarter_text.setPos(x_pos - 25, timeline_y - 45)
             
-            # 월별 작은 눈금 (각 연도 내에서 12개월 균등 배치)
+            # 월별 작은 눈금
             for month in range(1, 13):
-                if month not in [3, 6, 9, 12]:  # 분기 시작 월 제외
+                if month not in [3, 6, 9, 12]:
                     month_offset = (month - 1) * (year_spacing / 12)
                     x_pos = year_x + month_offset
                     tick_line = self.scene.addLine(x_pos, timeline_y - 10, x_pos, timeline_y + 10)
@@ -166,7 +168,6 @@ class TimelineCanvas(QWidget):
             # 연도 인덱스 찾기
             if year in years:
                 year_idx = years.index(year)
-                # 연도 시작 위치 + 월별 오프셋
                 year_x = start_x + (year_idx * year_spacing)
                 month_offset = (month - 1) * (year_spacing / 12)
                 x_pos = year_x + month_offset
@@ -194,7 +195,7 @@ class TimelineCanvas(QWidget):
         return layout
     
     def _draw_node(self, node_data: Dict, x: float, y: float, timeline_y: float):
-        """노드를 그립니다 - 체크박스 포함"""
+        """노드를 그립니다 - 체크박스 포함 및 메모 툴팁"""
         shape = node_data.get("shape", "●(동그라미)")
         color = QColor(node_data.get("color", "#FF6B6B"))
         content = node_data.get("content", "")
@@ -248,15 +249,18 @@ class TimelineCanvas(QWidget):
             node_item.setPen(QPen(QColor("white"), 2))
         
         if node_item:
-            tooltip_text = memo if memo else content
-            node_item.setToolTip(tooltip_text)
+            # 메모가 있으면 메모를 툴팁으로, 없으면 내용을 툴팁으로
+            if memo:
+                node_item.setToolTip(memo)
+            else:
+                node_item.setToolTip(content)
         
-        # 체크박스 추가 (노드 왼쪽)
+        # 체크박스 추가 (노드 왼쪽, 간격 조정)
         checkbox = QCheckBox()
         checkbox.setStyleSheet("""
             QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
+                width: 16px;
+                height: 16px;
                 border-radius: 4px;
                 border: 2px solid #d2d2d7;
                 background: white;
@@ -274,7 +278,7 @@ class TimelineCanvas(QWidget):
         )
         
         checkbox_proxy = self.scene.addWidget(checkbox)
-        checkbox_proxy.setPos(x - 35, y - 10)
+        checkbox_proxy.setPos(x - 45, y - 8)  # 간격 더 띄움
         self.node_checkboxes[node_id] = checkbox
         
         # 날짜와 내용 텍스트
@@ -314,7 +318,6 @@ class TimelineCanvas(QWidget):
             attach_text.setPos(x + 15, y - 15)
             attach_text.setToolTip(f"파일: {attachment}")
             
-            # 첨부파일 클릭 가능하게
             attach_text.setFlag(QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
             attach_text.mousePressEvent = lambda event: self._open_attachment(attachment)
         

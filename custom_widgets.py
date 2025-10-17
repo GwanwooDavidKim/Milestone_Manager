@@ -95,10 +95,12 @@ class MilestoneDialog(ModernDialog):
         self.result = None
         
         layout = QVBoxLayout()
-        layout.setSpacing(15)
+        layout.setSpacing(10)
         layout.setContentsMargins(30, 30, 30, 30)
         
-        layout.addWidget(QLabel("제목"))
+        title_label = QLabel("제목")
+        title_label.setStyleSheet("margin-top: 5px;")
+        layout.addWidget(title_label)
         self.title_input = QLineEdit()
         self.title_input.setPlaceholderText("마일스톤 제목을 입력하세요")
         self.title_input.setMinimumHeight(45)
@@ -106,7 +108,9 @@ class MilestoneDialog(ModernDialog):
             self.title_input.setText(milestone_data.get("title", ""))
         layout.addWidget(self.title_input)
         
-        layout.addWidget(QLabel("부제목"))
+        subtitle_label = QLabel("부제목")
+        subtitle_label.setStyleSheet("margin-top: 15px;")
+        layout.addWidget(subtitle_label)
         self.subtitle_input = QLineEdit()
         self.subtitle_input.setPlaceholderText("부제목을 입력하세요 (선택사항)")
         self.subtitle_input.setMinimumHeight(45)
