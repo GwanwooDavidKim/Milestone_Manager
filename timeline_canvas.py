@@ -39,7 +39,7 @@ class TimelineCanvas(QWidget):
         self.draw_timeline()
     
     def draw_timeline(self):
-        """타임라인과 노드를 그립니다 - 라이트 모드 개선 버전"""
+        """타임라인과 노드를 그립니다 - 개선 버전"""
         self.scene.clear()
         self.node_items.clear()
         
@@ -80,15 +80,17 @@ class TimelineCanvas(QWidget):
         
         date_range = end_date - start_date
         
-        # 분기별 큰 눈금선 (24.Q1, 24.Q2 형식)
+        # 분기별 큰 눈금선 (균등 간격)
         start_year = start_date // 100
         end_year = end_date // 100
         
         for year in range(start_year, end_year + 1):
             for quarter in [1, 2, 3, 4]:
-                date_val = year * 100 + quarter * 3  # Q1=3, Q2=6, Q3=9, Q4=12
+                month = quarter * 3  # Q1=3, Q2=6, Q3=9, Q4=12
+                date_val = year * 100 + month
                 
                 if start_date <= date_val <= end_date:
+                    # 날짜 범위 전체에 대한 비율로 x 좌표 계산
                     x_pos = start_x + ((date_val - start_date) / date_range) * timeline_width
                     
                     # 큰 눈금선
@@ -101,7 +103,7 @@ class TimelineCanvas(QWidget):
                     quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
                     quarter_text.setPos(x_pos - 25, timeline_y - 45)
         
-        # 월별 작은 눈금선 (12개월)
+        # 월별 작은 눈금선 (균등 간격)
         for year in range(start_year, end_year + 1):
             for month in range(1, 13):
                 date_val = year * 100 + month
@@ -120,7 +122,7 @@ class TimelineCanvas(QWidget):
             self._draw_node(node_data, x, y, timeline_y)
     
     def _parse_date(self, date_str: str) -> int:
-        """날짜 문자열을 숫자로 변환 (수정됨)"""
+        """날짜 문자열을 숫자로 변환"""
         date_str = date_str.strip().upper()
         
         if "Q" in date_str:
@@ -147,7 +149,7 @@ class TimelineCanvas(QWidget):
     
     def _calculate_node_positions(self, nodes: List[Dict], start_date: int, end_date: int,
                                    start_x: float, timeline_width: float, timeline_y: float) -> List[Tuple]:
-        """노드 위치 계산 - 겹침 방지"""
+        """노드 위치 계산 - 마일스톤 근처에 배치"""
         layout = []
         date_range = end_date - start_date
         occupied_positions = []
@@ -158,17 +160,20 @@ class TimelineCanvas(QWidget):
             
             x_pos = start_x + ((date_val - start_date) / date_range) * timeline_width
             
+            # 마일스톤 근처에 배치 (기본 거리를 작게)
             y_offset = 0
             alternating = i % 2
+            base_distance = 50  # 기본 거리 줄임
             
+            # 겹침 체크 (더 작은 간격으로)
             for occupied_x, occupied_y in occupied_positions:
-                if abs(occupied_x - x_pos) < 100:
-                    y_offset = max(y_offset, abs(occupied_y - timeline_y) + 50)
+                if abs(occupied_x - x_pos) < 80:  # 겹침 체크 거리 줄임
+                    y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 40)
             
             if alternating == 0:
-                y_pos = timeline_y - 70 - y_offset
+                y_pos = timeline_y - base_distance - y_offset
             else:
-                y_pos = timeline_y + 70 + y_offset
+                y_pos = timeline_y + base_distance + y_offset
             
             layout.append((node, x_pos, y_pos))
             occupied_positions.append((x_pos, y_pos))
@@ -176,12 +181,13 @@ class TimelineCanvas(QWidget):
         return layout
     
     def _draw_node(self, node_data: Dict, x: float, y: float, timeline_y: float):
-        """노드를 그립니다 (작은 크기, 선택 표시 추가)"""
+        """노드를 그립니다 - 날짜 표시 추가, 간격 조정"""
         shape = node_data.get("shape", "●(동그라미)")
         color = QColor(node_data.get("color", "#FF6B6B"))
         content = node_data.get("content", "")
         memo = node_data.get("memo", "")
         attachment = node_data.get("attachment", "")
+        date = node_data.get("date", "")
         node_id = node_data.get("id", "")
         
         # 타임라인과 연결선
@@ -189,7 +195,7 @@ class TimelineCanvas(QWidget):
         connector_line.setPen(QPen(QColor("#d2d2d7"), 1, Qt.PenStyle.DashLine))
         
         node_item = None
-        node_size = 20  # 작은 크기로 변경
+        node_size = 20
         
         if "●" in shape or "동그라미" in shape:
             node_item = self.scene.addEllipse(x - node_size/2, y - node_size/2, node_size, node_size)
@@ -229,7 +235,7 @@ class TimelineCanvas(QWidget):
             node_item.setPen(QPen(QColor("white"), 2))
         
         if node_item:
-            # 툴팁 설정 (메모 우선, 없으면 내용)
+            # 툴팁 설정 (메모 우선)
             tooltip_text = memo if memo else content
             node_item.setToolTip(tooltip_text)
             node_item.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsSelectable)
@@ -238,13 +244,35 @@ class TimelineCanvas(QWidget):
             if node_id == self.selected_node_id:
                 node_item.setPen(QPen(QColor("#007AFF"), 4))
         
-        # 내용 텍스트
-        text_y = y - 30 if y < timeline_y else y + 25
-        text_item = self.scene.addText(content)
-        text_item.setDefaultTextColor(QColor("#1d1d1f"))
-        text_item.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
-        text_bounds = text_item.boundingRect()
-        text_item.setPos(x - text_bounds.width() / 2, text_y)
+        # 날짜와 내용 텍스트 - 간격 조정
+        if y < timeline_y:  # 노드가 위에 있을 때
+            # 날짜 (노드 바로 위)
+            date_text = self.scene.addText(date)
+            date_text.setDefaultTextColor(QColor("#86868b"))
+            date_text.setFont(QFont("Apple SD Gothic Neo", 10))
+            date_bounds = date_text.boundingRect()
+            date_text.setPos(x - date_bounds.width() / 2, y - 35)
+            
+            # 내용 (날짜 위)
+            content_text = self.scene.addText(content)
+            content_text.setDefaultTextColor(QColor("#1d1d1f"))
+            content_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+            content_bounds = content_text.boundingRect()
+            content_text.setPos(x - content_bounds.width() / 2, y - 50)
+        else:  # 노드가 아래에 있을 때
+            # 날짜 (노드 바로 아래)
+            date_text = self.scene.addText(date)
+            date_text.setDefaultTextColor(QColor("#86868b"))
+            date_text.setFont(QFont("Apple SD Gothic Neo", 10))
+            date_bounds = date_text.boundingRect()
+            date_text.setPos(x - date_bounds.width() / 2, y + 20)
+            
+            # 내용 (날짜 아래)
+            content_text = self.scene.addText(content)
+            content_text.setDefaultTextColor(QColor("#1d1d1f"))
+            content_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+            content_bounds = content_text.boundingRect()
+            content_text.setPos(x - content_bounds.width() / 2, y + 35)
         
         # 첨부파일 아이콘
         if attachment:
@@ -279,7 +307,7 @@ class TimelineCanvas(QWidget):
         return path
     
     def mousePressEvent(self, event):
-        """마우스 클릭 이벤트 - 노드 선택 및 첨부파일 실행"""
+        """마우스 클릭 이벤트 - 노드 선택"""
         scene_pos = self.view.mapToScene(event.pos())
         item = self.scene.itemAt(scene_pos, self.view.transform())
         

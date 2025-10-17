@@ -100,6 +100,7 @@ class MilestoneDialog(ModernDialog):
         layout.addWidget(QLabel("제목"))
         self.title_input = QLineEdit()
         self.title_input.setPlaceholderText("마일스톤 제목을 입력하세요")
+        self.title_input.setMinimumHeight(45)
         if milestone_data:
             self.title_input.setText(milestone_data.get("title", ""))
         layout.addWidget(self.title_input)
@@ -107,6 +108,7 @@ class MilestoneDialog(ModernDialog):
         layout.addWidget(QLabel("부제목"))
         self.subtitle_input = QLineEdit()
         self.subtitle_input.setPlaceholderText("부제목을 입력하세요 (선택사항)")
+        self.subtitle_input.setMinimumHeight(45)
         if milestone_data:
             self.subtitle_input.setText(milestone_data.get("subtitle", ""))
         layout.addWidget(self.subtitle_input)

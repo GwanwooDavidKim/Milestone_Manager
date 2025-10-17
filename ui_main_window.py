@@ -90,12 +90,13 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
         
-        title_label = QLabel("🎯 Milestone Manager")
+        title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
             font-size: 28px;
             font-weight: bold;
             color: #1d1d1f;
             margin-bottom: 10px;
+            padding: 10px;
         """)
         main_layout.addWidget(title_label)
         
@@ -430,23 +431,24 @@ class MainWindow(QMainWindow):
     
     def _edit_node(self, milestone_id: str):
         """노드 수정"""
-        if not self.selected_node:
+        if not self.selected_node or not self.current_milestone_id:
             self._show_message(QMessageBox.Icon.Warning, "경고", "수정할 노드를 먼저 선택해주세요.")
             return
         
         dialog = NodeDialog(self, node_data=self.selected_node)
         if dialog.exec() and dialog.result:
             self.data_manager.update_node(
-                milestone_id,
+                self.current_milestone_id,
                 self.selected_node["id"],
                 dialog.result
             )
             self.selected_node = None
+            self.current_milestone_id = None
             self._refresh_ui()
     
     def _delete_node(self, milestone_id: str):
         """노드 삭제"""
-        if not self.selected_node:
+        if not self.selected_node or not self.current_milestone_id:
             self._show_message(QMessageBox.Icon.Warning, "경고", "삭제할 노드를 먼저 선택해주세요.")
             return
         
@@ -475,6 +477,7 @@ class MainWindow(QMainWindow):
         reply = msg.exec()
         
         if reply == QMessageBox.StandardButton.Yes:
-            self.data_manager.delete_node(milestone_id, self.selected_node["id"])
+            self.data_manager.delete_node(self.current_milestone_id, self.selected_node["id"])
             self.selected_node = None
+            self.current_milestone_id = None
             self._refresh_ui()

@@ -156,10 +156,10 @@ class LoginWindow(QDialog):
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
         
-        title = QLabel("🎯 Milestone Manager")
+        title = QLabel("Milestone Manager")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setFont(QFont("Apple SD Gothic Neo", 28, QFont.Weight.Bold))
-        title.setStyleSheet("margin-bottom: 10px; color: #1d1d1f;")
+        title.setStyleSheet("margin-bottom: 10px; color: #1d1d1f; padding: 10px;")
         layout.addWidget(title)
         
         license_info = QLabel(f"라이선스 만료일: {self.EXPIRY_DATE}")
