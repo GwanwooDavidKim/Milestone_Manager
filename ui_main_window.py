@@ -23,8 +23,7 @@ class MainWindow(QMainWindow):
         self.data_manager = DataManager()
         self.milestone_widgets = []
         self.selected_milestone_ids: Set[str] = set()
-        self.selected_node = None
-        self.current_milestone_id = None
+        self.selected_nodes_by_milestone: Dict[str, Optional[Dict]] = {}  # 마일스톤별 선택된 노드
         self.filter_settings = None
         
         self.setStyleSheet("""
@@ -480,34 +479,30 @@ class MainWindow(QMainWindow):
             self._refresh_ui()
     
     def _on_node_selected(self, milestone_id: str, node_data: Optional[Dict]):
-        """노드 선택"""
-        if node_data:
-            self.current_milestone_id = milestone_id
-            self.selected_node = node_data
-        else:
-            self.current_milestone_id = None
-            self.selected_node = None
+        """노드 선택 - 마일스톤별로 독립적으로 관리"""
+        self.selected_nodes_by_milestone[milestone_id] = node_data
     
     def _edit_node(self, milestone_id: str):
-        """노드 수정"""
-        if not self.selected_node or not self.current_milestone_id:
+        """노드 수정 - 해당 마일스톤의 선택된 노드만 수정"""
+        selected_node = self.selected_nodes_by_milestone.get(milestone_id)
+        if not selected_node:
             self._show_message(QMessageBox.Icon.Warning, "경고", "수정할 노드를 먼저 선택해주세요.")
             return
         
-        dialog = NodeDialog(self, node_data=self.selected_node)
+        dialog = NodeDialog(self, node_data=selected_node)
         if dialog.exec() and dialog.result:
             self.data_manager.update_node(
-                self.current_milestone_id,
-                self.selected_node["id"],
+                milestone_id,
+                selected_node["id"],
                 dialog.result
             )
-            self.selected_node = None
-            self.current_milestone_id = None
+            self.selected_nodes_by_milestone[milestone_id] = None
             self._refresh_ui()
     
     def _delete_node(self, milestone_id: str):
-        """노드 삭제"""
-        if not self.selected_node or not self.current_milestone_id:
+        """노드 삭제 - 해당 마일스톤의 선택된 노드만 삭제"""
+        selected_node = self.selected_nodes_by_milestone.get(milestone_id)
+        if not selected_node:
             self._show_message(QMessageBox.Icon.Warning, "경고", "삭제할 노드를 먼저 선택해주세요.")
             return
         
@@ -536,9 +531,8 @@ class MainWindow(QMainWindow):
         reply = msg.exec()
         
         if reply == QMessageBox.StandardButton.Yes:
-            self.data_manager.delete_node(self.current_milestone_id, self.selected_node["id"])
-            self.selected_node = None
-            self.current_milestone_id = None
+            self.data_manager.delete_node(milestone_id, selected_node["id"])
+            self.selected_nodes_by_milestone[milestone_id] = None
             self._refresh_ui()
     
     def _add_node_shortcut(self):
