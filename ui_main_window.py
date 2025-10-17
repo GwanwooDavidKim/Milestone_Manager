@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                               QFrame, QMessageBox, QFileDialog)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QPainter
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Optional
 
 from data_manager import DataManager
 from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog
