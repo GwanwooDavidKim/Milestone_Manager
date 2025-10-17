@@ -294,23 +294,36 @@ class MainWindow(QMainWindow):
             self.clear_filter_btn.hide()
     
     def export_image(self):
-        """이미지 내보내기"""
+        """이미지 내보내기 - 블록별로 분리 저장"""
         if not self.milestone_widgets:
             self._show_message(QMessageBox.Icon.Warning, "경고", "내보낼 마일스톤이 없습니다.")
             return
         
         filename, _ = QFileDialog.getSaveFileName(
-            self, "이미지 저장",
+            self, "이미지 저장 (블록별로 _1, _2... 형식으로 저장됩니다)",
             "",
             "PNG Files (*.png);;JPG Files (*.jpg)"
         )
         
         if filename:
             try:
-                widget = self.milestone_widgets[0]
-                pixmap = widget.grab()
-                pixmap.save(filename)
-                self._show_message(QMessageBox.Icon.Information, "성공", f"이미지가 저장되었습니다: {filename}")
+                import os
+                base_name = os.path.splitext(filename)[0]
+                extension = os.path.splitext(filename)[1]
+                
+                saved_files = []
+                for i, widget in enumerate(self.milestone_widgets, 1):
+                    pixmap = widget.grab()
+                    output_filename = f"{base_name}_{i}{extension}"
+                    pixmap.save(output_filename)
+                    saved_files.append(output_filename)
+                
+                files_list = "\n".join([f"  • {os.path.basename(f)}" for f in saved_files])
+                self._show_message(
+                    QMessageBox.Icon.Information, 
+                    "성공", 
+                    f"{len(saved_files)}개의 이미지가 저장되었습니다:\n{files_list}"
+                )
             except Exception as e:
                 self._show_message(QMessageBox.Icon.Critical, "오류", f"이미지 저장 실패: {str(e)}")
     
@@ -527,31 +540,6 @@ class MainWindow(QMainWindow):
             self.data_manager.delete_node(milestone_id, selected_node["id"])
             self.selected_nodes_by_milestone[milestone_id] = None
             self._refresh_ui()
-    
-    def _add_node_shortcut(self):
-        """단축키로 노드 추가 - 노드가 선택된 마일스톤에 추가"""
-        # 노드가 선택된 마일스톤 찾기
-        for milestone_id, selected_node in self.selected_nodes_by_milestone.items():
-            if selected_node:
-                self._add_node_to_milestone(milestone_id)
-                return
-        
-        # 선택된 노드가 없으면 첫 번째 마일스톤에 추가
-        milestones = self.data_manager.get_all_milestones()
-        if milestones:
-            self._add_node_to_milestone(milestones[0]["id"])
-        else:
-            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 마일스톤을 생성해주세요.")
-    
-    def _edit_node_shortcut(self):
-        """단축키로 노드 수정 - 선택된 노드 수정"""
-        # 노드가 선택된 마일스톤 찾기
-        for milestone_id, selected_node in self.selected_nodes_by_milestone.items():
-            if selected_node:
-                self._edit_node(milestone_id)
-                return
-        
-        self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
     
     def _delete_node_shortcut(self):
         """단축키로 노드 삭제 - 선택된 노드 삭제"""
