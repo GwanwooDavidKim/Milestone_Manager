@@ -294,13 +294,13 @@ class MainWindow(QMainWindow):
             self.clear_filter_btn.hide()
     
     def export_image(self):
-        """이미지 내보내기 - 블록별로 분리 저장"""
+        """이미지 내보내기 - Milestone_IMG 폴더에 블록별로 분리 저장"""
         if not self.milestone_widgets:
             self._show_message(QMessageBox.Icon.Warning, "경고", "내보낼 마일스톤이 없습니다.")
             return
         
         filename, _ = QFileDialog.getSaveFileName(
-            self, "이미지 저장 (블록별로 _1, _2... 형식으로 저장됩니다)",
+            self, "이미지 저장 (Milestone_IMG 폴더에 블록별로 저장됩니다)",
             "",
             "PNG Files (*.png);;JPG Files (*.jpg)"
         )
@@ -308,13 +308,19 @@ class MainWindow(QMainWindow):
         if filename:
             try:
                 import os
-                base_name = os.path.splitext(filename)[0]
+                
+                # Milestone_IMG 폴더 생성
+                img_folder = "Milestone_IMG"
+                os.makedirs(img_folder, exist_ok=True)
+                
+                # 파일명과 확장자 분리
+                base_name = os.path.splitext(os.path.basename(filename))[0]
                 extension = os.path.splitext(filename)[1]
                 
                 saved_files = []
                 for i, widget in enumerate(self.milestone_widgets, 1):
                     pixmap = widget.grab()
-                    output_filename = f"{base_name}_{i}{extension}"
+                    output_filename = os.path.join(img_folder, f"{base_name}_{i}{extension}")
                     pixmap.save(output_filename)
                     saved_files.append(output_filename)
                 
@@ -322,7 +328,7 @@ class MainWindow(QMainWindow):
                 self._show_message(
                     QMessageBox.Icon.Information, 
                     "성공", 
-                    f"{len(saved_files)}개의 이미지가 저장되었습니다:\n{files_list}"
+                    f"{len(saved_files)}개의 이미지가 Milestone_IMG 폴더에 저장되었습니다:\n{files_list}"
                 )
             except Exception as e:
                 self._show_message(QMessageBox.Icon.Critical, "오류", f"이미지 저장 실패: {str(e)}")
