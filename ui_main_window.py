@@ -472,7 +472,6 @@ class MainWindow(QMainWindow):
     
     def _add_node_to_milestone(self, milestone_id: str):
         """노드 추가"""
-        self.current_milestone_id = milestone_id
         dialog = NodeDialog(self)
         if dialog.exec() and dialog.result:
             self.data_manager.add_node(milestone_id, dialog.result)
@@ -536,22 +535,36 @@ class MainWindow(QMainWindow):
             self._refresh_ui()
     
     def _add_node_shortcut(self):
-        """단축키로 노드 추가"""
-        if self.current_milestone_id:
-            self._add_node_to_milestone(self.current_milestone_id)
+        """단축키로 노드 추가 - 노드가 선택된 마일스톤에 추가"""
+        # 노드가 선택된 마일스톤 찾기
+        for milestone_id, selected_node in self.selected_nodes_by_milestone.items():
+            if selected_node:
+                self._add_node_to_milestone(milestone_id)
+                return
+        
+        # 선택된 노드가 없으면 첫 번째 마일스톤에 추가
+        milestones = self.data_manager.get_all_milestones()
+        if milestones:
+            self._add_node_to_milestone(milestones[0]["id"])
         else:
-            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 마일스톤을 선택해주세요.")
+            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 마일스톤을 생성해주세요.")
     
     def _edit_node_shortcut(self):
-        """단축키로 노드 수정"""
-        if self.current_milestone_id:
-            self._edit_node(self.current_milestone_id)
-        else:
-            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
+        """단축키로 노드 수정 - 선택된 노드 수정"""
+        # 노드가 선택된 마일스톤 찾기
+        for milestone_id, selected_node in self.selected_nodes_by_milestone.items():
+            if selected_node:
+                self._edit_node(milestone_id)
+                return
+        
+        self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
     
     def _delete_node_shortcut(self):
-        """단축키로 노드 삭제"""
-        if self.current_milestone_id:
-            self._delete_node(self.current_milestone_id)
-        else:
-            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
+        """단축키로 노드 삭제 - 선택된 노드 삭제"""
+        # 노드가 선택된 마일스톤 찾기
+        for milestone_id, selected_node in self.selected_nodes_by_milestone.items():
+            if selected_node:
+                self._delete_node(milestone_id)
+                return
+        
+        self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
