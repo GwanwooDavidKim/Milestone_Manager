@@ -131,6 +131,7 @@ class MilestoneDialog(ModernDialog):
         
         ok_btn = QPushButton("확인")
         ok_btn.setFixedWidth(100)
+        ok_btn.setDefault(True)  # 엔터키로 클릭 가능
         ok_btn.clicked.connect(self._on_confirm)
         btn_layout.addWidget(ok_btn)
         
@@ -233,6 +234,7 @@ class NodeDialog(ModernDialog):
         
         ok_btn = QPushButton("확인")
         ok_btn.setFixedWidth(100)
+        ok_btn.setDefault(True)  # 엔터키로 클릭 가능
         ok_btn.clicked.connect(self._on_confirm)
         btn_layout.addWidget(ok_btn)
         
@@ -375,6 +377,7 @@ class SearchFilterDialog(ModernDialog):
         
         apply_btn = QPushButton("적용")
         apply_btn.setFixedWidth(100)
+        apply_btn.setDefault(True)  # 엔터키로 클릭 가능
         apply_btn.clicked.connect(self._on_apply)
         btn_layout.addWidget(apply_btn)
         
