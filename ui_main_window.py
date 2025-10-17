@@ -86,6 +86,9 @@ class MainWindow(QMainWindow):
         
         delete_node_shortcut = QShortcut(QKeySequence("Ctrl+D"), self)
         delete_node_shortcut.activated.connect(self._delete_node_shortcut)
+        
+        # 프로그램 시작 시 자동 로드
+        self.load_data(auto_load=True)
     
     def _create_ui(self):
         """UI 구성"""
@@ -105,6 +108,18 @@ class MainWindow(QMainWindow):
             padding: 5px;
         """)
         main_layout.addWidget(title_label)
+        
+        # 데이터 상태 표시 레이블
+        self.data_status_label = QLabel("⚠️ 데이터 없음")
+        self.data_status_label.setStyleSheet("""
+            color: #FF9500;
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #FFF3E0;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        """)
+        main_layout.addWidget(self.data_status_label)
         
         toolbar = QHBoxLayout()
         toolbar.setSpacing(10)
@@ -197,21 +212,64 @@ class MainWindow(QMainWindow):
         """)
         return msg.exec()
     
-    def load_data(self):
+    def load_data(self, auto_load=False):
         """데이터 로드"""
         try:
             self.data_manager.load_data()
             self._refresh_ui()
-            self._show_message(QMessageBox.Icon.Information, "성공", "데이터를 성공적으로 불러왔습니다.")
+            self._update_data_status()
+            if not auto_load:
+                self._show_message(QMessageBox.Icon.Information, "성공", "데이터를 성공적으로 불러왔습니다.")
         except Exception as e:
-            self._show_message(QMessageBox.Icon.Critical, "오류", str(e))
+            self._update_data_status()
+            if not auto_load:
+                self._show_message(QMessageBox.Icon.Critical, "오류", str(e))
     
     def save_data(self):
-        """데이터 저장"""
+        """데이터 저장 - 백업 자동 생성"""
+        milestones = self.data_manager.get_milestones()
+        
+        # 빈 데이터 저장 경고
+        if not milestones:
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("경고")
+            msg.setText("현재 데이터가 비어있습니다.\n저장하면 기존 데이터가 삭제됩니다.\n\n계속하시겠습니까?")
+            msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 14px;
+                }
+                QPushButton {
+                    background-color: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    min-width: 80px;
+                }
+            """)
+            if msg.exec() != QMessageBox.StandardButton.Yes:
+                return
+        
         try:
-            data = {"milestones": self.data_manager.get_milestones()}
+            import os
+            import shutil
+            
+            # 기존 파일이 있으면 백업 생성
+            if os.path.exists("raw.json"):
+                shutil.copy2("raw.json", "raw.json.backup")
+            
+            data = {"milestones": milestones}
             self.data_manager.save_data(data)
-            self._show_message(QMessageBox.Icon.Information, "성공", "데이터가 저장되었습니다.")
+            self._update_data_status()
+            
+            backup_msg = "\n(백업: raw.json.backup)" if os.path.exists("raw.json.backup") else ""
+            self._show_message(QMessageBox.Icon.Information, "성공", f"데이터가 저장되었습니다.{backup_msg}")
         except Exception as e:
             self._show_message(QMessageBox.Icon.Critical, "오류", str(e))
     
@@ -363,6 +421,32 @@ class MainWindow(QMainWindow):
                 self._create_milestone_block(milestone)
         
         self.scroll_layout.addStretch()
+    
+    def _update_data_status(self):
+        """데이터 상태 레이블 업데이트"""
+        milestones = self.data_manager.get_milestones()
+        count = len(milestones)
+        
+        if count == 0:
+            self.data_status_label.setText("⚠️ 데이터 없음")
+            self.data_status_label.setStyleSheet("""
+                color: #FF9500;
+                font-size: 12px;
+                padding: 4px 8px;
+                background: #FFF3E0;
+                border-radius: 4px;
+                margin-bottom: 8px;
+            """)
+        else:
+            self.data_status_label.setText(f"✅ 데이터 로드됨 ({count}개 마일스톤)")
+            self.data_status_label.setStyleSheet("""
+                color: #34C759;
+                font-size: 12px;
+                padding: 4px 8px;
+                background: #E8F5E9;
+                border-radius: 4px;
+                margin-bottom: 8px;
+            """)
     
     def _should_show_milestone(self, milestone: Dict) -> bool:
         """필터링 - 제목과 부제목에서만 검색"""
