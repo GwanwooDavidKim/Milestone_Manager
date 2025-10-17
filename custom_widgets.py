@@ -1,220 +1,314 @@
 """커스텀 위젯 모듈 - 다이얼로그와 재사용 가능한 UI 컴포넌트"""
 
-import customtkinter as ctk
-from tkinter import filedialog, colorchooser
-from typing import Optional, Dict, Callable
+from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+                              QLineEdit, QPushButton, QComboBox, QTextEdit,
+                              QFileDialog, QColorDialog)
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
+from typing import Optional, Dict
 
 
-class MilestoneDialog(ctk.CTkToplevel):
+class ModernDialog(QDialog):
+    """애플 스타일의 현대적인 다이얼로그 베이스 클래스"""
+    
+    def __init__(self, parent=None, title: str = ""):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setModal(True)
+        self.setStyleSheet("""
+            QDialog {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1e1e1e, stop:1 #2d2d2d);
+                border-radius: 12px;
+            }
+            QLabel {
+                color: #ffffff;
+                font-size: 14px;
+            }
+            QLineEdit, QTextEdit {
+                background-color: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 8px 12px;
+                color: #ffffff;
+                font-size: 14px;
+            }
+            QLineEdit:focus, QTextEdit:focus {
+                border: 1px solid #007AFF;
+                background-color: rgba(255, 255, 255, 0.08);
+            }
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #007AFF, stop:1 #0051D5);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1A8CFF, stop:1 #0062E6);
+            }
+            QPushButton:pressed {
+                background: #0051D5;
+            }
+            QPushButton#secondary {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            QPushButton#secondary:hover {
+                background: rgba(255, 255, 255, 0.15);
+            }
+            QComboBox {
+                background-color: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 8px 12px;
+                color: #ffffff;
+                font-size: 14px;
+            }
+            QComboBox:focus {
+                border: 1px solid #007AFF;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                selection-background-color: #007AFF;
+                color: #ffffff;
+            }
+        """)
+
+
+class MilestoneDialog(ModernDialog):
     """마일스톤 생성/수정 다이얼로그"""
     
-    def __init__(self, parent, title: str = "마일스톤 생성", 
-                 milestone_data: Optional[Dict] = None):
-        """
-        Args:
-            parent: 부모 윈도우
-            title (str): 다이얼로그 제목
-            milestone_data (Optional[Dict]): 수정 시 기존 데이터
-        """
-        super().__init__(parent)
-        self.title(title)
-        self.geometry("400x250")
-        self.resizable(False, False)
-        
+    def __init__(self, parent=None, milestone_data: Optional[Dict] = None):
+        super().__init__(parent, "마일스톤 생성" if not milestone_data else "마일스톤 수정")
+        self.setFixedSize(500, 250)
         self.result = None
         
-        ctk.CTkLabel(self, text="제목:").pack(pady=(20, 5))
-        self.title_entry = ctk.CTkEntry(self, width=350)
-        self.title_entry.pack(pady=5)
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
         
-        ctk.CTkLabel(self, text="부제목:").pack(pady=(10, 5))
-        self.subtitle_entry = ctk.CTkEntry(self, width=350)
-        self.subtitle_entry.pack(pady=5)
-        
+        layout.addWidget(QLabel("제목"))
+        self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText("마일스톤 제목을 입력하세요")
         if milestone_data:
-            self.title_entry.insert(0, milestone_data.get("title", ""))
-            self.subtitle_entry.insert(0, milestone_data.get("subtitle", ""))
+            self.title_input.setText(milestone_data.get("title", ""))
+        layout.addWidget(self.title_input)
         
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(pady=20)
+        layout.addWidget(QLabel("부제목"))
+        self.subtitle_input = QLineEdit()
+        self.subtitle_input.setPlaceholderText("부제목을 입력하세요 (선택사항)")
+        if milestone_data:
+            self.subtitle_input.setText(milestone_data.get("subtitle", ""))
+        layout.addWidget(self.subtitle_input)
         
-        ctk.CTkButton(btn_frame, text="확인", command=self._on_confirm,
-                     width=100).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="취소", command=self.destroy,
-                     width=100).pack(side="left", padx=5)
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
         
-        self.grab_set()
-        self.wait_window()
+        cancel_btn = QPushButton("취소")
+        cancel_btn.setObjectName("secondary")
+        cancel_btn.setFixedWidth(100)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        
+        ok_btn = QPushButton("확인")
+        ok_btn.setFixedWidth(100)
+        ok_btn.clicked.connect(self._on_confirm)
+        btn_layout.addWidget(ok_btn)
+        
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
     
     def _on_confirm(self):
-        """확인 버튼 클릭 시 데이터 반환"""
-        title = self.title_entry.get().strip()
-        subtitle = self.subtitle_entry.get().strip()
-        
+        title = self.title_input.text().strip()
         if not title:
             return
-        
         self.result = {
             "title": title,
-            "subtitle": subtitle
+            "subtitle": self.subtitle_input.text().strip()
         }
-        self.destroy()
+        self.accept()
 
 
-class NodeDialog(ctk.CTkToplevel):
+class NodeDialog(ModernDialog):
     """노드 생성/수정 다이얼로그"""
     
     SHAPES = ["●(동그라미)", "▲(세모)", "■(네모)", "★(별)", "◆(마름모)"]
     
-    def __init__(self, parent, title: str = "노드 추가", 
-                 node_data: Optional[Dict] = None):
-        """
-        Args:
-            parent: 부모 윈도우
-            title (str): 다이얼로그 제목
-            node_data (Optional[Dict]): 수정 시 기존 노드 데이터
-        """
-        super().__init__(parent)
-        self.title(title)
-        self.geometry("450x600")
-        self.resizable(False, False)
-        
+    def __init__(self, parent=None, node_data: Optional[Dict] = None):
+        super().__init__(parent, "노드 추가" if not node_data else "노드 수정")
+        self.setFixedSize(550, 650)
         self.result = None
-        self.selected_color = node_data.get("color", "#3B8ED0") if node_data else "#3B8ED0"
+        self.selected_color = node_data.get("color", "#FF6B6B") if node_data else "#FF6B6B"
         self.attached_file = node_data.get("attachment", "") if node_data else ""
         
-        scroll_frame = ctk.CTkScrollableFrame(self, width=420, height=500)
-        scroll_frame.pack(pady=10, padx=10, fill="both", expand=True)
+        layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.setContentsMargins(30, 30, 30, 30)
         
-        ctk.CTkLabel(scroll_frame, text="모양:").pack(pady=(10, 5), anchor="w", padx=10)
-        self.shape_var = ctk.StringVar(value=node_data.get("shape", self.SHAPES[0]) if node_data else self.SHAPES[0])
-        self.shape_menu = ctk.CTkOptionMenu(scroll_frame, values=self.SHAPES, 
-                                            variable=self.shape_var, width=400)
-        self.shape_menu.pack(pady=5, padx=10)
-        
-        ctk.CTkLabel(scroll_frame, text="색상:").pack(pady=(10, 5), anchor="w", padx=10)
-        color_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        color_frame.pack(pady=5, padx=10, fill="x")
-        
-        self.color_display = ctk.CTkLabel(color_frame, text="   ", 
-                                          fg_color=self.selected_color, 
-                                          width=50, height=30, corner_radius=5)
-        self.color_display.pack(side="left", padx=5)
-        
-        ctk.CTkButton(color_frame, text="색상 선택", command=self._choose_color,
-                     width=100).pack(side="left", padx=5)
-        
-        ctk.CTkLabel(scroll_frame, text="날짜 (YY.MM 또는 YY.Qn):").pack(pady=(10, 5), anchor="w", padx=10)
-        self.date_entry = ctk.CTkEntry(scroll_frame, width=400, 
-                                       placeholder_text="예: 24.10 또는 24.Q3")
-        self.date_entry.pack(pady=5, padx=10)
-        
-        ctk.CTkLabel(scroll_frame, text="내용:").pack(pady=(10, 5), anchor="w", padx=10)
-        self.content_entry = ctk.CTkEntry(scroll_frame, width=400,
-                                          placeholder_text="노드 옆에 표시될 텍스트")
-        self.content_entry.pack(pady=5, padx=10)
-        
-        ctk.CTkLabel(scroll_frame, text="메모:").pack(pady=(10, 5), anchor="w", padx=10)
-        self.memo_text = ctk.CTkTextbox(scroll_frame, width=400, height=100)
-        self.memo_text.pack(pady=5, padx=10)
-        
-        ctk.CTkLabel(scroll_frame, text="첨부 파일:").pack(pady=(10, 5), anchor="w", padx=10)
-        file_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        file_frame.pack(pady=5, padx=10, fill="x")
-        
-        self.file_label = ctk.CTkLabel(file_frame, text=self.attached_file or "파일 없음", 
-                                       anchor="w")
-        self.file_label.pack(side="left", padx=5, fill="x", expand=True)
-        
-        ctk.CTkButton(file_frame, text="파일 선택", command=self._choose_file,
-                     width=100).pack(side="left", padx=5)
-        
+        layout.addWidget(QLabel("모양"))
+        self.shape_combo = QComboBox()
+        self.shape_combo.addItems(self.SHAPES)
         if node_data:
-            self.date_entry.insert(0, node_data.get("date", ""))
-            self.content_entry.insert(0, node_data.get("content", ""))
-            self.memo_text.insert("1.0", node_data.get("memo", ""))
+            idx = self.SHAPES.index(node_data.get("shape", self.SHAPES[0]))
+            self.shape_combo.setCurrentIndex(idx)
+        layout.addWidget(self.shape_combo)
         
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(pady=10)
+        layout.addWidget(QLabel("색상"))
+        color_layout = QHBoxLayout()
+        self.color_btn = QPushButton(f"선택된 색상: {self.selected_color}")
+        self.color_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.selected_color};
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+            }}
+        """)
+        self.color_btn.clicked.connect(self._choose_color)
+        color_layout.addWidget(self.color_btn)
+        layout.addLayout(color_layout)
         
-        ctk.CTkButton(btn_frame, text="확인", command=self._on_confirm,
-                     width=100).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="취소", command=self.destroy,
-                     width=100).pack(side="left", padx=5)
+        layout.addWidget(QLabel("날짜 (YY.MM 또는 YY.Qn)"))
+        self.date_input = QLineEdit()
+        self.date_input.setPlaceholderText("예: 24.10 또는 24.Q3")
+        if node_data:
+            self.date_input.setText(node_data.get("date", ""))
+        layout.addWidget(self.date_input)
         
-        self.grab_set()
-        self.wait_window()
+        layout.addWidget(QLabel("내용"))
+        self.content_input = QLineEdit()
+        self.content_input.setPlaceholderText("노드 옆에 표시될 텍스트")
+        if node_data:
+            self.content_input.setText(node_data.get("content", ""))
+        layout.addWidget(self.content_input)
+        
+        layout.addWidget(QLabel("메모"))
+        self.memo_input = QTextEdit()
+        self.memo_input.setPlaceholderText("상세 메모를 입력하세요")
+        self.memo_input.setMaximumHeight(100)
+        if node_data:
+            self.memo_input.setPlainText(node_data.get("memo", ""))
+        layout.addWidget(self.memo_input)
+        
+        layout.addWidget(QLabel("첨부 파일"))
+        file_layout = QHBoxLayout()
+        self.file_label = QLabel(self.attached_file if self.attached_file else "파일 없음")
+        self.file_label.setStyleSheet("color: #888888;")
+        file_layout.addWidget(self.file_label, 1)
+        file_btn = QPushButton("파일 선택")
+        file_btn.setObjectName("secondary")
+        file_btn.setFixedWidth(100)
+        file_btn.clicked.connect(self._choose_file)
+        file_layout.addWidget(file_btn)
+        layout.addLayout(file_layout)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        cancel_btn = QPushButton("취소")
+        cancel_btn.setObjectName("secondary")
+        cancel_btn.setFixedWidth(100)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        
+        ok_btn = QPushButton("확인")
+        ok_btn.setFixedWidth(100)
+        ok_btn.clicked.connect(self._on_confirm)
+        btn_layout.addWidget(ok_btn)
+        
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
     
     def _choose_color(self):
-        """색상 선택 다이얼로그"""
-        color = colorchooser.askcolor(initialcolor=self.selected_color)
-        if color[1]:
-            self.selected_color = color[1]
-            self.color_display.configure(fg_color=self.selected_color)
+        color = QColorDialog.getColor(QColor(self.selected_color), self)
+        if color.isValid():
+            self.selected_color = color.name()
+            self.color_btn.setText(f"선택된 색상: {self.selected_color}")
+            self.color_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {self.selected_color};
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: bold;
+                }}
+            """)
     
     def _choose_file(self):
-        """파일 선택 다이얼로그"""
-        filename = filedialog.askopenfilename()
+        filename, _ = QFileDialog.getOpenFileName(self, "파일 선택")
         if filename:
             self.attached_file = filename
-            self.file_label.configure(text=filename)
+            self.file_label.setText(filename)
     
     def _on_confirm(self):
-        """확인 버튼 클릭 시 데이터 반환"""
-        date = self.date_entry.get().strip()
-        content = self.content_entry.get().strip()
+        date = self.date_input.text().strip()
+        content = self.content_input.text().strip()
         
         if not date or not content:
             return
         
         self.result = {
-            "shape": self.shape_var.get(),
+            "shape": self.shape_combo.currentText(),
             "color": self.selected_color,
             "date": date,
             "content": content,
-            "memo": self.memo_text.get("1.0", "end-1c").strip(),
+            "memo": self.memo_input.toPlainText().strip(),
             "attachment": self.attached_file
         }
-        self.destroy()
+        self.accept()
 
 
-class SearchFilterDialog(ctk.CTkToplevel):
+class SearchFilterDialog(ModernDialog):
     """검색 및 필터 다이얼로그"""
     
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.title("검색 및 필터")
-        self.geometry("400x300")
-        self.resizable(False, False)
-        
+    def __init__(self, parent=None):
+        super().__init__(parent, "검색 및 필터")
+        self.setFixedSize(450, 280)
         self.result = None
         
-        ctk.CTkLabel(self, text="키워드 검색:").pack(pady=(20, 5))
-        self.keyword_entry = ctk.CTkEntry(self, width=350, 
-                                          placeholder_text="제목, 부제목, 내용에서 검색")
-        self.keyword_entry.pack(pady=5)
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
         
-        ctk.CTkLabel(self, text="모양 필터:").pack(pady=(10, 5))
-        self.shape_var = ctk.StringVar(value="전체")
-        shapes = ["전체"] + NodeDialog.SHAPES
-        ctk.CTkOptionMenu(self, values=shapes, variable=self.shape_var,
-                         width=350).pack(pady=5)
+        layout.addWidget(QLabel("키워드 검색"))
+        self.keyword_input = QLineEdit()
+        self.keyword_input.setPlaceholderText("제목, 부제목, 내용에서 검색")
+        layout.addWidget(self.keyword_input)
         
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(pady=20)
+        layout.addWidget(QLabel("모양 필터"))
+        self.shape_combo = QComboBox()
+        self.shape_combo.addItems(["전체"] + NodeDialog.SHAPES)
+        layout.addWidget(self.shape_combo)
         
-        ctk.CTkButton(btn_frame, text="적용", command=self._on_apply,
-                     width=100).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="취소", command=self.destroy,
-                     width=100).pack(side="left", padx=5)
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
         
-        self.grab_set()
-        self.wait_window()
+        cancel_btn = QPushButton("취소")
+        cancel_btn.setObjectName("secondary")
+        cancel_btn.setFixedWidth(100)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        
+        apply_btn = QPushButton("적용")
+        apply_btn.setFixedWidth(100)
+        apply_btn.clicked.connect(self._on_apply)
+        btn_layout.addWidget(apply_btn)
+        
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
     
     def _on_apply(self):
-        """필터 적용"""
         self.result = {
-            "keyword": self.keyword_entry.get().strip(),
-            "shape": None if self.shape_var.get() == "전체" else self.shape_var.get()
+            "keyword": self.keyword_input.text().strip(),
+            "shape": None if self.shape_combo.currentText() == "전체" else self.shape_combo.currentText()
         }
-        self.destroy()
+        self.accept()

@@ -2,15 +2,17 @@
 로그인 및 라이선스 체크 후 메인 윈도우 실행
 """
 
-import customtkinter as ctk
-from tkinter import messagebox
+import sys
+from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
 from datetime import datetime
 
 from ui_main_window import MainWindow
 
 
-class LoginWindow(ctk.CTk):
-    """로그인 및 라이선스 체크 윈도우"""
+class LoginWindow(QDialog):
+    """애플 스타일의 로그인 윈도우"""
     
     VALID_USERNAME = "MCI"
     VALID_PASSWORD = "mci2025!"
@@ -18,20 +20,53 @@ class LoginWindow(ctk.CTk):
     
     def __init__(self):
         super().__init__()
-        
-        self.title("Milestone Manager - Login")
-        self.geometry("400x350")
-        self.resizable(False, False)
-        
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
+        self.setWindowTitle("Milestone Manager - Login")
+        self.setFixedSize(450, 400)
+        self.setModal(True)
         
         self.authenticated = False
         
+        self.setStyleSheet("""
+            QDialog {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1a1a1a, stop:1 #2d2d2d);
+            }
+            QLabel {
+                color: white;
+            }
+            QLineEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                padding: 12px 16px;
+                color: white;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #007AFF;
+                background-color: rgba(255, 255, 255, 0.12);
+            }
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #007AFF, stop:1 #0051D5);
+                border: none;
+                border-radius: 10px;
+                color: white;
+                padding: 14px 24px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1A8CFF, stop:1 #0062E6);
+            }
+            QPushButton:pressed {
+                background: #0051D5;
+            }
+        """)
+        
         self._check_license()
         self._create_ui()
-        
-        self.protocol("WM_DELETE_WINDOW", self._on_closing)
     
     def _check_license(self):
         """라이선스 만료일 체크"""
@@ -40,86 +75,95 @@ class LoginWindow(ctk.CTk):
             today = datetime.now()
             
             if today > expiry:
-                messagebox.showerror(
+                QMessageBox.critical(
+                    self,
                     "라이선스 만료",
                     f"프로그램 사용 기간이 만료되었습니다.\n만료일: {self.EXPIRY_DATE}"
                 )
-                self.quit()
-                return
+                sys.exit(0)
             
             remaining_days = (expiry - today).days
             if remaining_days <= 30:
-                messagebox.showwarning(
+                QMessageBox.warning(
+                    self,
                     "라이선스 경고",
                     f"프로그램 사용 기간이 {remaining_days}일 남았습니다.\n만료일: {self.EXPIRY_DATE}"
                 )
         except Exception as e:
-            messagebox.showerror("오류", f"라이선스 체크 실패: {str(e)}")
-            self.quit()
+            QMessageBox.critical(self, "오류", f"라이선스 체크 실패: {str(e)}")
+            sys.exit(1)
     
     def _create_ui(self):
         """로그인 UI 구성"""
-        ctk.CTkLabel(
-            self,
-            text="🎯 Milestone Manager",
-            font=("Arial", 24, "bold")
-        ).pack(pady=30)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(40, 40, 40, 40)
+        layout.setSpacing(20)
         
-        ctk.CTkLabel(
-            self,
-            text=f"라이선스 만료일: {self.EXPIRY_DATE}",
-            font=("Arial", 10),
-            text_color="#AAAAAA"
-        ).pack(pady=5)
+        title = QLabel("🎯 Milestone Manager")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setFont(QFont("Apple SD Gothic Neo", 28, QFont.Weight.Bold))
+        title.setStyleSheet("margin-bottom: 10px;")
+        layout.addWidget(title)
         
-        ctk.CTkLabel(self, text="Username:", font=("Arial", 12)).pack(pady=(20, 5))
-        self.username_entry = ctk.CTkEntry(self, width=300, placeholder_text="사용자 이름 입력")
-        self.username_entry.pack(pady=5)
+        license_info = QLabel(f"라이선스 만료일: {self.EXPIRY_DATE}")
+        license_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        license_info.setStyleSheet("color: #888888; font-size: 12px; margin-bottom: 20px;")
+        layout.addWidget(license_info)
         
-        ctk.CTkLabel(self, text="Password:", font=("Arial", 12)).pack(pady=(10, 5))
-        self.password_entry = ctk.CTkEntry(self, width=300, show="*", 
-                                           placeholder_text="비밀번호 입력")
-        self.password_entry.pack(pady=5)
+        username_label = QLabel("Username")
+        username_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        layout.addWidget(username_label)
         
-        self.password_entry.bind("<Return>", lambda e: self._login())
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("사용자 이름을 입력하세요")
+        layout.addWidget(self.username_input)
         
-        ctk.CTkButton(
-            self,
-            text="로그인",
-            command=self._login,
-            width=300,
-            height=40,
-            font=("Arial", 14, "bold")
-        ).pack(pady=30)
+        password_label = QLabel("Password")
+        password_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        layout.addWidget(password_label)
+        
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("비밀번호를 입력하세요")
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.returnPressed.connect(self._login)
+        layout.addWidget(self.password_input)
+        
+        login_btn = QPushButton("로그인")
+        login_btn.clicked.connect(self._login)
+        login_btn.setFixedHeight(50)
+        layout.addWidget(login_btn, 0, Qt.AlignmentFlag.AlignCenter)
+        
+        layout.addStretch()
+        
+        self.setLayout(layout)
     
     def _login(self):
         """로그인 처리"""
-        username = self.username_entry.get().strip()
-        password = self.password_entry.get().strip()
+        username = self.username_input.text().strip()
+        password = self.password_input.text().strip()
         
         if username == self.VALID_USERNAME and password == self.VALID_PASSWORD:
             self.authenticated = True
-            self.destroy()
+            self.accept()
         else:
-            messagebox.showerror("로그인 실패", "아이디 또는 비밀번호가 올바르지 않습니다.")
-            self.password_entry.delete(0, 'end')
-    
-    def _on_closing(self):
-        """창 닫기 이벤트"""
-        self.authenticated = False
-        self.destroy()
+            QMessageBox.critical(self, "로그인 실패", "아이디 또는 비밀번호가 올바르지 않습니다.")
+            self.password_input.clear()
 
 
 def main():
     """애플리케이션 메인 함수"""
-    login_window = LoginWindow()
-    login_window.mainloop()
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
     
-    if login_window.authenticated:
+    login_window = LoginWindow()
+    
+    if login_window.exec() == QDialog.DialogCode.Accepted and login_window.authenticated:
         main_window = MainWindow()
-        main_window.mainloop()
+        main_window.show()
+        sys.exit(app.exec())
     else:
         print("로그인이 취소되었습니다.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

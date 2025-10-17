@@ -1,88 +1,168 @@
-"""메인 UI 윈도우 모듈 - 애플리케이션의 주요 GUI 구성"""
+"""메인 UI 윈도우 모듈 - 애플 스타일의 현대적인 GUI"""
 
-import customtkinter as ctk
-from tkinter import messagebox, filedialog
-from typing import List, Dict, Optional
-from PIL import Image, ImageGrab
-import io
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+                              QPushButton, QScrollArea, QLabel, QCheckBox,
+                              QFrame, QMessageBox, QFileDialog)
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QPainter
+from typing import List, Dict, Set
 
 from data_manager import DataManager
 from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog
 from timeline_canvas import TimelineCanvas
 
 
-class MainWindow(ctk.CTk):
-    """메인 GUI 창의 레이아웃과 위젯을 관리하는 클래스"""
+class MainWindow(QMainWindow):
+    """애플 스타일의 메인 윈도우"""
     
     def __init__(self):
         super().__init__()
-        
-        self.title("Milestone Manager")
-        self.geometry("1400x800")
-        
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
+        self.setWindowTitle("Milestone Manager")
+        self.setGeometry(100, 100, 1600, 900)
         
         self.data_manager = DataManager()
-        self.milestone_blocks = []
-        self.selected_milestone_ids = set()
+        self.milestone_widgets = []
+        self.selected_milestone_ids: Set[str] = set()
         self.selected_node = None
         self.current_milestone_id = None
         self.filter_settings = None
         
+        self.setStyleSheet("""
+            QMainWindow {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #0a0a0a, stop:1 #1a1a1a);
+            }
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #007AFF, stop:1 #0051D5);
+                border: none;
+                border-radius: 10px;
+                color: white;
+                padding: 12px 24px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1A8CFF, stop:1 #0062E6);
+            }
+            QPushButton:pressed {
+                background: #0051D5;
+            }
+            QPushButton#secondary {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            QPushButton#secondary:hover {
+                background: rgba(255, 255, 255, 0.12);
+            }
+            QPushButton#danger {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #FF3B30, stop:1 #D32F2F);
+            }
+            QPushButton#danger:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #FF4C41, stop:1 #E43A3A);
+            }
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            QLabel {
+                color: white;
+            }
+        """)
+        
         self._create_ui()
         
-        self.bind("<Control-s>", lambda e: self.save_data())
+        save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        save_shortcut.activated.connect(self.save_data)
     
     def _create_ui(self):
-        """UI 구성 요소 생성"""
-        top_frame = ctk.CTkFrame(self, height=60, fg_color="transparent")
-        top_frame.pack(fill="x", padx=10, pady=10)
-        top_frame.pack_propagate(False)
+        """UI 구성"""
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
         
-        ctk.CTkButton(top_frame, text="Data Load", command=self.load_data,
-                     width=120, height=40).pack(side="left", padx=5)
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
         
-        ctk.CTkButton(top_frame, text="Data 저장 (Ctrl+S)", command=self.save_data,
-                     width=150, height=40).pack(side="left", padx=5)
+        title_label = QLabel("🎯 Milestone Manager")
+        title_label.setStyleSheet("""
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+        """)
+        main_layout.addWidget(title_label)
         
-        ctk.CTkButton(top_frame, text="Milestone 생성", command=self.create_milestone,
-                     width=140, height=40).pack(side="left", padx=5)
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(10)
         
-        ctk.CTkButton(top_frame, text="선택한 Milestone 삭제", command=self.delete_selected_milestones,
-                     width=180, height=40).pack(side="left", padx=5)
+        load_btn = QPushButton("📂 Data Load")
+        load_btn.clicked.connect(self.load_data)
+        toolbar.addWidget(load_btn)
         
-        ctk.CTkButton(top_frame, text="검색/필터", command=self.open_search_filter,
-                     width=120, height=40).pack(side="left", padx=5)
+        save_btn = QPushButton("💾 Data 저장 (Ctrl+S)")
+        save_btn.clicked.connect(self.save_data)
+        toolbar.addWidget(save_btn)
         
-        ctk.CTkButton(top_frame, text="이미지 내보내기", command=self.export_image,
-                     width=140, height=40).pack(side="left", padx=5)
+        create_btn = QPushButton("➕ Milestone 생성")
+        create_btn.clicked.connect(self.create_milestone)
+        toolbar.addWidget(create_btn)
         
-        self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        delete_btn = QPushButton("🗑️ 선택 삭제")
+        delete_btn.setObjectName("danger")
+        delete_btn.clicked.connect(self.delete_selected_milestones)
+        toolbar.addWidget(delete_btn)
+        
+        search_btn = QPushButton("🔍 검색/필터")
+        search_btn.setObjectName("secondary")
+        search_btn.clicked.connect(self.open_search_filter)
+        toolbar.addWidget(search_btn)
+        
+        export_btn = QPushButton("📤 이미지 내보내기")
+        export_btn.setObjectName("secondary")
+        export_btn.clicked.connect(self.export_image)
+        toolbar.addWidget(export_btn)
+        
+        toolbar.addStretch()
+        main_layout.addLayout(toolbar)
+        
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(scroll_content)
+        self.scroll_layout.setSpacing(20)
+        self.scroll_layout.setContentsMargins(10, 10, 10, 10)
+        
+        scroll.setWidget(scroll_content)
+        main_layout.addWidget(scroll)
     
     def load_data(self):
-        """raw.json 데이터 로드"""
+        """데이터 로드"""
         try:
-            data = self.data_manager.load_data()
+            self.data_manager.load_data()
             self._refresh_ui()
-            messagebox.showinfo("성공", "데이터를 성공적으로 불러왔습니다.")
+            QMessageBox.information(self, "성공", "데이터를 성공적으로 불러왔습니다.")
         except Exception as e:
-            messagebox.showerror("오류", str(e))
+            QMessageBox.critical(self, "오류", str(e))
     
     def save_data(self):
-        """현재 데이터를 raw.json에 저장"""
+        """데이터 저장"""
         try:
             data = {"milestones": self.data_manager.get_milestones()}
             self.data_manager.save_data(data)
-            messagebox.showinfo("성공", "데이터가 저장되었습니다.")
+            QMessageBox.information(self, "성공", "데이터가 저장되었습니다.")
         except Exception as e:
-            messagebox.showerror("오류", str(e))
+            QMessageBox.critical(self, "오류", str(e))
     
     def create_milestone(self):
-        """새 마일스톤 생성"""
+        """마일스톤 생성"""
         dialog = MilestoneDialog(self)
-        if dialog.result:
+        if dialog.exec() and dialog.result:
             self.data_manager.add_milestone(
                 dialog.result["title"],
                 dialog.result["subtitle"]
@@ -92,64 +172,80 @@ class MainWindow(ctk.CTk):
     def delete_selected_milestones(self):
         """선택된 마일스톤 삭제"""
         if not self.selected_milestone_ids:
-            messagebox.showwarning("경고", "삭제할 마일스톤을 선택해주세요.")
+            QMessageBox.warning(self, "경고", "삭제할 마일스톤을 선택해주세요.")
             return
         
         count = len(self.selected_milestone_ids)
-        if messagebox.askyesno("확인", f"{count}개의 마일스톤을 삭제하시겠습니까?"):
+        reply = QMessageBox.question(
+            self, "확인",
+            f"{count}개의 마일스톤을 삭제하시겠습니까?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
             for milestone_id in self.selected_milestone_ids:
                 self.data_manager.delete_milestone(milestone_id)
             self.selected_milestone_ids.clear()
             self._refresh_ui()
     
     def open_search_filter(self):
-        """검색 및 필터 다이얼로그 열기"""
+        """검색/필터 다이얼로그"""
         dialog = SearchFilterDialog(self)
-        if dialog.result:
+        if dialog.exec() and dialog.result:
             self.filter_settings = dialog.result
             self._refresh_ui()
     
     def export_image(self):
-        """마일스톤을 이미지로 내보내기"""
-        if not self.milestone_blocks:
-            messagebox.showwarning("경고", "내보낼 마일스톤이 없습니다.")
+        """이미지 내보내기"""
+        if not self.milestone_widgets:
+            QMessageBox.warning(self, "경고", "내보낼 마일스톤이 없습니다.")
             return
         
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".png",
-            filetypes=[("PNG files", "*.png"), ("JPG files", "*.jpg")]
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "이미지 저장",
+            "",
+            "PNG Files (*.png);;JPG Files (*.jpg)"
         )
         
         if filename:
             try:
-                if self.milestone_blocks:
-                    widget = self.milestone_blocks[0]
-                    x = widget.winfo_rootx()
-                    y = widget.winfo_rooty()
-                    w = widget.winfo_width()
-                    h = widget.winfo_height()
-                    
-                    img = ImageGrab.grab(bbox=(x, y, x + w, y + h))
-                    img.save(filename)
-                    messagebox.showinfo("성공", f"이미지가 저장되었습니다: {filename}")
+                widget = self.milestone_widgets[0]
+                pixmap = widget.grab()
+                pixmap.save(filename)
+                QMessageBox.information(self, "성공", f"이미지가 저장되었습니다: {filename}")
             except Exception as e:
-                messagebox.showerror("오류", f"이미지 저장 실패: {str(e)}")
+                QMessageBox.critical(self, "오류", f"이미지 저장 실패: {str(e)}")
     
     def _refresh_ui(self):
         """UI 새로고침"""
-        for widget in self.scroll_frame.winfo_children():
-            widget.destroy()
+        while self.scroll_layout.count():
+            item = self.scroll_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         
-        self.milestone_blocks.clear()
+        self.milestone_widgets.clear()
         
         milestones = self.data_manager.get_milestones()
+        
+        if not milestones:
+            empty_label = QLabel("마일스톤이 없습니다. '➕ Milestone 생성' 버튼을 눌러 시작하세요.")
+            empty_label.setStyleSheet("""
+                color: #666666;
+                font-size: 16px;
+                padding: 40px;
+            """)
+            empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.scroll_layout.addWidget(empty_label)
+            return
         
         for milestone in milestones:
             if self._should_show_milestone(milestone):
                 self._create_milestone_block(milestone)
+        
+        self.scroll_layout.addStretch()
     
     def _should_show_milestone(self, milestone: Dict) -> bool:
-        """필터링 조건에 따라 마일스톤 표시 여부 결정"""
+        """필터링"""
         if not self.filter_settings:
             return True
         
@@ -168,99 +264,111 @@ class MainWindow(ctk.CTk):
                     return False
         
         if shape_filter:
-            has_matching_shape = False
-            for node in milestone.get("nodes", []):
-                if node.get("shape") == shape_filter:
-                    has_matching_shape = True
-                    break
+            has_matching_shape = any(
+                node.get("shape") == shape_filter
+                for node in milestone.get("nodes", [])
+            )
             if not has_matching_shape:
                 return False
         
         return True
     
     def _create_milestone_block(self, milestone: Dict):
-        """Liquid Glass 스타일의 마일스톤 블록 생성"""
-        block_frame = ctk.CTkFrame(
-            self.scroll_frame,
-            fg_color="#1E1E1E",
-            border_width=2,
-            border_color="#3B8ED0",
-            corner_radius=15
+        """리퀴드 글래스 스타일의 마일스톤 블록 생성"""
+        block = QFrame()
+        block.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(30, 30, 30, 0.8), stop:1 rgba(20, 20, 20, 0.9));
+                border: 2px solid;
+                border-image: linear-gradient(135deg, 
+                    rgba(74, 158, 255, 0.6), 
+                    rgba(138, 99, 255, 0.6),
+                    rgba(74, 158, 255, 0.6)) 1;
+                border-radius: 16px;
+            }
+        """)
+        
+        block_layout = QVBoxLayout(block)
+        block_layout.setContentsMargins(20, 20, 20, 20)
+        block_layout.setSpacing(15)
+        
+        header = QHBoxLayout()
+        
+        checkbox = QCheckBox()
+        checkbox.setChecked(milestone["id"] in self.selected_milestone_ids)
+        checkbox.setStyleSheet("""
+            QCheckBox::indicator {
+                width: 20px;
+                height: 20px;
+                border-radius: 6px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            QCheckBox::indicator:checked {
+                background: #007AFF;
+                border: 2px solid #007AFF;
+            }
+        """)
+        checkbox.stateChanged.connect(
+            lambda state: self._toggle_milestone_selection(milestone["id"], state == Qt.CheckState.Checked.value)
         )
-        block_frame.pack(fill="x", padx=10, pady=15)
+        header.addWidget(checkbox)
         
-        self.milestone_blocks.append(block_frame)
+        title_layout = QVBoxLayout()
+        title_layout.setSpacing(5)
         
-        header_frame = ctk.CTkFrame(block_frame, fg_color="transparent")
-        header_frame.pack(fill="x", padx=15, pady=10)
+        title = QLabel(milestone.get("title", ""))
+        title.setStyleSheet("""
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+        """)
+        title_layout.addWidget(title)
         
-        checkbox_var = ctk.BooleanVar(
-            value=milestone["id"] in self.selected_milestone_ids
-        )
+        subtitle = QLabel(milestone.get("subtitle", ""))
+        subtitle.setStyleSheet("""
+            font-size: 14px;
+            color: #999999;
+        """)
+        title_layout.addWidget(subtitle)
         
-        checkbox = ctk.CTkCheckBox(
-            header_frame,
-            text="",
-            variable=checkbox_var,
-            command=lambda: self._toggle_milestone_selection(milestone["id"], checkbox_var.get()),
-            width=30
-        )
-        checkbox.pack(side="left", padx=(0, 10))
+        header.addLayout(title_layout, 1)
         
-        title_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        title_frame.pack(side="left", fill="x", expand=True)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
         
-        ctk.CTkLabel(
-            title_frame,
-            text=milestone.get("title", ""),
-            font=("Arial", 18, "bold"),
-            text_color="white"
-        ).pack(anchor="w")
+        add_btn = QPushButton("➕ Node 추가")
+        add_btn.setFixedHeight(35)
+        add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
+        btn_layout.addWidget(add_btn)
         
-        ctk.CTkLabel(
-            title_frame,
-            text=milestone.get("subtitle", ""),
-            font=("Arial", 12),
-            text_color="#AAAAAA"
-        ).pack(anchor="w")
+        edit_btn = QPushButton("✏️ Node 수정")
+        edit_btn.setObjectName("secondary")
+        edit_btn.setFixedHeight(35)
+        edit_btn.clicked.connect(lambda: self._edit_node(milestone["id"]))
+        btn_layout.addWidget(edit_btn)
         
-        btn_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        btn_frame.pack(side="right")
+        delete_btn = QPushButton("🗑️ Node 삭제")
+        delete_btn.setObjectName("danger")
+        delete_btn.setFixedHeight(35)
+        delete_btn.clicked.connect(lambda: self._delete_node(milestone["id"]))
+        btn_layout.addWidget(delete_btn)
         
-        ctk.CTkButton(
-            btn_frame,
-            text="Node 추가",
-            command=lambda: self._add_node_to_milestone(milestone["id"]),
-            width=100,
-            height=30
-        ).pack(side="left", padx=5)
+        header.addLayout(btn_layout)
         
-        ctk.CTkButton(
-            btn_frame,
-            text="Node 수정",
-            command=lambda: self._edit_node(milestone["id"]),
-            width=100,
-            height=30
-        ).pack(side="left", padx=5)
+        block_layout.addLayout(header)
         
-        ctk.CTkButton(
-            btn_frame,
-            text="Node 삭제",
-            command=lambda: self._delete_node(milestone["id"]),
-            width=100,
-            height=30
-        ).pack(side="left", padx=5)
-        
-        timeline_frame = ctk.CTkFrame(block_frame, fg_color="#2B2B2B", height=400)
-        timeline_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
-        timeline_frame.pack_propagate(False)
-        
-        canvas = TimelineCanvas(
-            timeline_frame,
-            milestone,
+        timeline = TimelineCanvas(
+            parent=block,
+            milestone_data=milestone,
             on_node_click=lambda nd: self._on_node_selected(milestone["id"], nd)
         )
-        canvas.pack(fill="both", expand=True)
+        timeline.setMinimumHeight(400)
+        block_layout.addWidget(timeline)
+        
+        self.scroll_layout.addWidget(block)
+        self.milestone_widgets.append(block)
     
     def _toggle_milestone_selection(self, milestone_id: str, is_selected: bool):
         """마일스톤 선택 토글"""
@@ -270,26 +378,26 @@ class MainWindow(ctk.CTk):
             self.selected_milestone_ids.discard(milestone_id)
     
     def _add_node_to_milestone(self, milestone_id: str):
-        """마일스톤에 노드 추가"""
+        """노드 추가"""
         self.current_milestone_id = milestone_id
         dialog = NodeDialog(self)
-        if dialog.result:
+        if dialog.exec() and dialog.result:
             self.data_manager.add_node(milestone_id, dialog.result)
             self._refresh_ui()
     
     def _on_node_selected(self, milestone_id: str, node_data: Dict):
-        """노드 선택 이벤트"""
+        """노드 선택"""
         self.current_milestone_id = milestone_id
         self.selected_node = node_data
     
     def _edit_node(self, milestone_id: str):
         """노드 수정"""
         if not self.selected_node:
-            messagebox.showwarning("경고", "수정할 노드를 먼저 선택해주세요.")
+            QMessageBox.warning(self, "경고", "수정할 노드를 먼저 선택해주세요.")
             return
         
-        dialog = NodeDialog(self, title="노드 수정", node_data=self.selected_node)
-        if dialog.result:
+        dialog = NodeDialog(self, node_data=self.selected_node)
+        if dialog.exec() and dialog.result:
             self.data_manager.update_node(
                 milestone_id,
                 self.selected_node["id"],
@@ -301,10 +409,16 @@ class MainWindow(ctk.CTk):
     def _delete_node(self, milestone_id: str):
         """노드 삭제"""
         if not self.selected_node:
-            messagebox.showwarning("경고", "삭제할 노드를 먼저 선택해주세요.")
+            QMessageBox.warning(self, "경고", "삭제할 노드를 먼저 선택해주세요.")
             return
         
-        if messagebox.askyesno("확인", "선택한 노드를 삭제하시겠습니까?"):
+        reply = QMessageBox.question(
+            self, "확인",
+            "선택한 노드를 삭제하시겠습니까?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
             self.data_manager.delete_node(milestone_id, self.selected_node["id"])
             self.selected_node = None
             self._refresh_ui()
