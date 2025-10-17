@@ -78,8 +78,18 @@ class MainWindow(QMainWindow):
         
         self._create_ui()
         
+        # 단축키 설정
         save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         save_shortcut.activated.connect(self.save_data)
+        
+        add_node_shortcut = QShortcut(QKeySequence("Ctrl+N"), self)
+        add_node_shortcut.activated.connect(self._add_node_shortcut)
+        
+        edit_node_shortcut = QShortcut(QKeySequence("Ctrl+E"), self)
+        edit_node_shortcut.activated.connect(self._edit_node_shortcut)
+        
+        delete_node_shortcut = QShortcut(QKeySequence("Ctrl+D"), self)
+        delete_node_shortcut.activated.connect(self._delete_node_shortcut)
     
     def _create_ui(self):
         """UI 구성"""
@@ -425,16 +435,16 @@ class MainWindow(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
         
-        add_btn = QPushButton("➕ Node 추가")
+        add_btn = QPushButton("➕ Node 추가\n(Ctrl+N)")
         add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
         btn_layout.addWidget(add_btn)
         
-        edit_btn = QPushButton("✏️ Node 수정")
+        edit_btn = QPushButton("✏️ Node 수정\n(Ctrl+E)")
         edit_btn.setObjectName("secondary")
         edit_btn.clicked.connect(lambda: self._edit_node(milestone["id"]))
         btn_layout.addWidget(edit_btn)
         
-        delete_btn = QPushButton("🗑️ Node 삭제")
+        delete_btn = QPushButton("🗑️ Node 삭제\n(Ctrl+D)")
         delete_btn.setObjectName("danger")
         delete_btn.clicked.connect(lambda: self._delete_node(milestone["id"]))
         btn_layout.addWidget(delete_btn)
@@ -530,3 +540,24 @@ class MainWindow(QMainWindow):
             self.selected_node = None
             self.current_milestone_id = None
             self._refresh_ui()
+    
+    def _add_node_shortcut(self):
+        """단축키로 노드 추가"""
+        if self.current_milestone_id:
+            self._add_node_to_milestone(self.current_milestone_id)
+        else:
+            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 마일스톤을 선택해주세요.")
+    
+    def _edit_node_shortcut(self):
+        """단축키로 노드 수정"""
+        if self.current_milestone_id:
+            self._edit_node(self.current_milestone_id)
+        else:
+            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
+    
+    def _delete_node_shortcut(self):
+        """단축키로 노드 삭제"""
+        if self.current_milestone_id:
+            self._delete_node(self.current_milestone_id)
+        else:
+            self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")

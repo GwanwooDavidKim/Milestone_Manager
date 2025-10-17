@@ -1,12 +1,63 @@
 """타임라인 캔버스 모듈 - 라이트 모드 타임라인과 노드 시각화"""
 
-from PyQt6.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsPathItem, QCheckBox, QGraphicsProxyWidget
+from PyQt6.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsPathItem, QCheckBox, QGraphicsProxyWidget, QMessageBox, QDialog, QVBoxLayout, QTextEdit, QPushButton
 from PyQt6.QtCore import Qt, QPointF, QRectF
 from PyQt6.QtGui import QPen, QBrush, QColor, QPainter, QPolygonF, QPainterPath, QFont
 from typing import List, Dict, Optional, Tuple
 import math
 import os
 import platform
+
+
+class MemoDialog(QDialog):
+    """메모 표시 다이얼로그"""
+    
+    def __init__(self, parent=None, memo: str = ""):
+        super().__init__(parent)
+        self.setWindowTitle("메모")
+        self.setModal(True)
+        self.setFixedSize(500, 400)
+        
+        self.setStyleSheet("""
+            QDialog {
+                background: white;
+            }
+            QTextEdit {
+                background: #f5f5f7;
+                border: 1px solid #d2d2d7;
+                border-radius: 8px;
+                padding: 12px;
+                color: #1d1d1f;
+                font-size: 14px;
+            }
+            QPushButton {
+                background: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #1A8CFF;
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        memo_text = QTextEdit()
+        memo_text.setPlainText(memo)
+        memo_text.setReadOnly(True)
+        layout.addWidget(memo_text)
+        
+        close_btn = QPushButton("닫기")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        
+        self.setLayout(layout)
 
 
 class TimelineCanvas(QWidget):
@@ -195,7 +246,7 @@ class TimelineCanvas(QWidget):
         return layout
     
     def _draw_node(self, node_data: Dict, x: float, y: float, timeline_y: float):
-        """노드를 그립니다 - 체크박스 포함 및 메모 툴팁"""
+        """노드를 그립니다 - 체크박스, 첨부파일, 메모 이모지 포함"""
         shape = node_data.get("shape", "●(동그라미)")
         color = QColor(node_data.get("color", "#FF6B6B"))
         content = node_data.get("content", "")
@@ -248,16 +299,14 @@ class TimelineCanvas(QWidget):
             node_item.setBrush(QBrush(color))
             node_item.setPen(QPen(QColor("white"), 2))
         
-        if node_item:
-            # 메모가 있으면 메모를 툴팁으로, 없으면 내용을 툴팁으로
-            if memo:
-                node_item.setToolTip(memo)
-            else:
-                node_item.setToolTip(content)
-        
-        # 체크박스 추가 (노드 왼쪽, 간격 조정)
+        # 체크박스 추가 (노드 왼쪽, 간격 조정, 중간 맞춤)
         checkbox = QCheckBox()
         checkbox.setStyleSheet("""
+            QCheckBox {
+                spacing: 0px;
+                padding: 0px;
+                margin: 0px;
+            }
             QCheckBox::indicator {
                 width: 16px;
                 height: 16px;
@@ -278,48 +327,76 @@ class TimelineCanvas(QWidget):
         )
         
         checkbox_proxy = self.scene.addWidget(checkbox)
-        checkbox_proxy.setPos(x - 45, y - 8)  # 간격 더 띄움
+        checkbox_proxy.setPos(x - 32, y - 8)  # 간격 줄이고 중간 맞춤
         self.node_checkboxes[node_id] = checkbox
         
         # 날짜와 내용 텍스트
         if y < timeline_y:  # 노드가 위에 있을 때
-            # 날짜 (노드 바로 위)
             date_text = self.scene.addText(date)
             date_text.setDefaultTextColor(QColor("#86868b"))
             date_text.setFont(QFont("Apple SD Gothic Neo", 10))
             date_bounds = date_text.boundingRect()
             date_text.setPos(x - date_bounds.width() / 2, y - 35)
             
-            # 내용 (날짜 위)
             content_text = self.scene.addText(content)
             content_text.setDefaultTextColor(QColor("#1d1d1f"))
             content_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
             content_bounds = content_text.boundingRect()
             content_text.setPos(x - content_bounds.width() / 2, y - 50)
         else:  # 노드가 아래에 있을 때
-            # 날짜 (노드 바로 아래)
             date_text = self.scene.addText(date)
             date_text.setDefaultTextColor(QColor("#86868b"))
             date_text.setFont(QFont("Apple SD Gothic Neo", 10))
             date_bounds = date_text.boundingRect()
             date_text.setPos(x - date_bounds.width() / 2, y + 20)
             
-            # 내용 (날짜 아래)
             content_text = self.scene.addText(content)
             content_text.setDefaultTextColor(QColor("#1d1d1f"))
             content_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
             content_bounds = content_text.boundingRect()
             content_text.setPos(x - content_bounds.width() / 2, y + 35)
         
+        # 이모지 위치 계산
+        emoji_x = x + 15
+        
         # 첨부파일 아이콘
         if attachment:
             attach_text = self.scene.addText("📎")
             attach_text.setFont(QFont("Apple Color Emoji", 12))
-            attach_text.setPos(x + 15, y - 15)
+            attach_text.setPos(emoji_x, y - 15)
             attach_text.setToolTip(f"파일: {attachment}")
             
+            # 클릭 가능하게 설정
             attach_text.setFlag(QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-            attach_text.mousePressEvent = lambda event: self._open_attachment(attachment)
+            attach_text.setAcceptHoverEvents(True)
+            
+            # 마우스 이벤트 직접 처리
+            def make_attachment_handler(file_path):
+                def handler(event):
+                    self._open_attachment(file_path)
+                return handler
+            
+            attach_text.mousePressEvent = make_attachment_handler(attachment)
+            emoji_x += 20
+        
+        # 메모 아이콘
+        if memo:
+            memo_text = self.scene.addText("📝")
+            memo_text.setFont(QFont("Apple Color Emoji", 12))
+            memo_text.setPos(emoji_x, y - 15)
+            memo_text.setToolTip("메모 보기")
+            
+            # 클릭 가능하게 설정
+            memo_text.setFlag(QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+            memo_text.setAcceptHoverEvents(True)
+            
+            # 마우스 이벤트 직접 처리
+            def make_memo_handler(memo_content):
+                def handler(event):
+                    self._show_memo(memo_content)
+                return handler
+            
+            memo_text.mousePressEvent = make_memo_handler(memo)
         
         self.node_items[node_id] = node_item
     
@@ -349,6 +426,11 @@ class TimelineCanvas(QWidget):
                 os.system(f'open "{attachment}"')
             else:
                 os.system(f'xdg-open "{attachment}"')
+    
+    def _show_memo(self, memo: str):
+        """메모 다이얼로그 표시"""
+        dialog = MemoDialog(self, memo)
+        dialog.exec()
     
     def _get_star_path(self, cx: float, cy: float, r: float, points: int = 5) -> QPainterPath:
         """별 모양 경로 생성"""
