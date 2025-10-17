@@ -1,15 +1,16 @@
-"""커스텀 위젯 모듈 - 다이얼로그와 재사용 가능한 UI 컴포넌트"""
+"""커스텀 위젯 모듈 - 라이트 모드 다이얼로그"""
 
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                               QLineEdit, QPushButton, QComboBox, QTextEdit,
-                              QFileDialog, QColorDialog)
+                              QFileDialog, QColorDialog, QMessageBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from typing import Optional, Dict
+import re
 
 
 class ModernDialog(QDialog):
-    """애플 스타일의 현대적인 다이얼로그 베이스 클래스"""
+    """라이트 모드 현대적인 다이얼로그 베이스 클래스"""
     
     def __init__(self, parent=None, title: str = ""):
         super().__init__(parent)
@@ -17,25 +18,24 @@ class ModernDialog(QDialog):
         self.setModal(True)
         self.setStyleSheet("""
             QDialog {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #1e1e1e, stop:1 #2d2d2d);
+                background: white;
+                border: 1px solid #d2d2d7;
                 border-radius: 12px;
             }
             QLabel {
-                color: #ffffff;
+                color: #1d1d1f;
                 font-size: 14px;
             }
             QLineEdit, QTextEdit {
-                background-color: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: white;
+                border: 1px solid #d2d2d7;
                 border-radius: 8px;
-                padding: 8px 12px;
-                color: #ffffff;
+                padding: 10px 12px;
+                color: #1d1d1f;
                 font-size: 14px;
             }
             QLineEdit:focus, QTextEdit:focus {
-                border: 1px solid #007AFF;
-                background-color: rgba(255, 255, 255, 0.08);
+                border: 2px solid #007AFF;
             }
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -55,30 +55,32 @@ class ModernDialog(QDialog):
                 background: #0051D5;
             }
             QPushButton#secondary {
-                background: rgba(255, 255, 255, 0.1);
+                background: #e8e8ed;
+                color: #1d1d1f;
+                border: 1px solid #d2d2d7;
             }
             QPushButton#secondary:hover {
-                background: rgba(255, 255, 255, 0.15);
+                background: #d2d2d7;
             }
             QComboBox {
-                background-color: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: white;
+                border: 1px solid #d2d2d7;
                 border-radius: 8px;
                 padding: 8px 12px;
-                color: #ffffff;
+                color: #1d1d1f;
                 font-size: 14px;
             }
             QComboBox:focus {
-                border: 1px solid #007AFF;
+                border: 2px solid #007AFF;
             }
             QComboBox::drop-down {
                 border: none;
             }
             QComboBox QAbstractItemView {
-                background-color: #2d2d2d;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: white;
+                border: 1px solid #d2d2d7;
                 selection-background-color: #007AFF;
-                color: #ffffff;
+                color: #1d1d1f;
             }
         """)
 
@@ -138,7 +140,7 @@ class MilestoneDialog(ModernDialog):
 
 
 class NodeDialog(ModernDialog):
-    """노드 생성/수정 다이얼로그"""
+    """노드 생성/수정 다이얼로그 - 날짜 양식 검증 추가"""
     
     SHAPES = ["●(동그라미)", "▲(세모)", "■(네모)", "★(별)", "◆(마름모)"]
     
@@ -167,7 +169,7 @@ class NodeDialog(ModernDialog):
         self.color_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {self.selected_color};
-                border: 2px solid rgba(255, 255, 255, 0.3);
+                border: 2px solid #d2d2d7;
                 border-radius: 8px;
                 color: white;
                 font-weight: bold;
@@ -177,7 +179,7 @@ class NodeDialog(ModernDialog):
         color_layout.addWidget(self.color_btn)
         layout.addLayout(color_layout)
         
-        layout.addWidget(QLabel("날짜 (YY.MM 또는 YY.Qn)"))
+        layout.addWidget(QLabel("날짜 (YY.MM 또는 YY.Qn 형식만 허용)"))
         self.date_input = QLineEdit()
         self.date_input.setPlaceholderText("예: 24.10 또는 24.Q3")
         if node_data:
@@ -191,7 +193,7 @@ class NodeDialog(ModernDialog):
             self.content_input.setText(node_data.get("content", ""))
         layout.addWidget(self.content_input)
         
-        layout.addWidget(QLabel("메모"))
+        layout.addWidget(QLabel("메모 (마우스 오버 시 툴팁으로 표시)"))
         self.memo_input = QTextEdit()
         self.memo_input.setPlaceholderText("상세 메모를 입력하세요")
         self.memo_input.setMaximumHeight(100)
@@ -202,7 +204,7 @@ class NodeDialog(ModernDialog):
         layout.addWidget(QLabel("첨부 파일"))
         file_layout = QHBoxLayout()
         self.file_label = QLabel(self.attached_file if self.attached_file else "파일 없음")
-        self.file_label.setStyleSheet("color: #888888;")
+        self.file_label.setStyleSheet("color: #86868b;")
         file_layout.addWidget(self.file_label, 1)
         file_btn = QPushButton("파일 선택")
         file_btn.setObjectName("secondary")
@@ -236,7 +238,7 @@ class NodeDialog(ModernDialog):
             self.color_btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {self.selected_color};
-                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    border: 2px solid #d2d2d7;
                     border-radius: 8px;
                     color: white;
                     font-weight: bold;
@@ -249,11 +251,75 @@ class NodeDialog(ModernDialog):
             self.attached_file = filename
             self.file_label.setText(filename)
     
+    def _validate_date(self, date_str: str) -> bool:
+        """날짜 양식 검증: YY.MM 또는 YY.Qn 형식만 허용"""
+        date_str = date_str.strip().upper()
+        
+        # YY.Qn 형식 검증 (예: 24.Q1, 24.Q2)
+        quarter_pattern = r'^\d{2}\.Q[1-4]$'
+        if re.match(quarter_pattern, date_str):
+            return True
+        
+        # YY.MM 형식 검증 (예: 24.10, 24.01)
+        month_pattern = r'^\d{2}\.(0[1-9]|1[0-2]|\d)$'
+        if re.match(month_pattern, date_str):
+            return True
+        
+        return False
+    
     def _on_confirm(self):
         date = self.date_input.text().strip()
         content = self.content_input.text().strip()
         
         if not date or not content:
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("입력 오류")
+            msg.setText("날짜와 내용을 모두 입력해주세요.")
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 14px;
+                }
+                QPushButton {
+                    background-color: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    min-width: 80px;
+                }
+            """)
+            msg.exec()
+            return
+        
+        # 날짜 양식 검증
+        if not self._validate_date(date):
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("날짜 형식 오류")
+            msg.setText("날짜는 YY.MM 또는 YY.Qn 형식으로 입력해주세요.\n\n예시:\n- 24.10 (2024년 10월)\n- 24.Q3 (2024년 3분기)")
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 14px;
+                }
+                QPushButton {
+                    background-color: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    min-width: 80px;
+                }
+            """)
+            msg.exec()
             return
         
         self.result = {

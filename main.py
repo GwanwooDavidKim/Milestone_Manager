@@ -12,7 +12,7 @@ from ui_main_window import MainWindow
 
 
 class LoginWindow(QDialog):
-    """애플 스타일의 로그인 윈도우"""
+    """애플 스타일의 로그인 윈도우 - 라이트 모드"""
     
     VALID_USERNAME = "MCI"
     VALID_PASSWORD = "mci2025!"
@@ -21,7 +21,7 @@ class LoginWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Milestone Manager - Login")
-        self.setFixedSize(450, 400)
+        self.setFixedSize(450, 450)
         self.setModal(True)
         
         self.authenticated = False
@@ -29,22 +29,23 @@ class LoginWindow(QDialog):
         self.setStyleSheet("""
             QDialog {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #1a1a1a, stop:1 #2d2d2d);
+                    stop:0 #f5f5f7, stop:1 #e8e8ed);
             }
             QLabel {
-                color: white;
+                color: #1d1d1f;
             }
             QLineEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.1);
+                background-color: white;
+                border: 1px solid #d2d2d7;
                 border-radius: 10px;
-                padding: 12px 16px;
-                color: white;
-                font-size: 14px;
+                padding: 14px 16px;
+                color: #1d1d1f;
+                font-size: 15px;
+                min-height: 20px;
             }
             QLineEdit:focus {
                 border: 2px solid #007AFF;
-                background-color: rgba(255, 255, 255, 0.12);
+                background-color: white;
             }
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -52,9 +53,10 @@ class LoginWindow(QDialog):
                 border: none;
                 border-radius: 10px;
                 color: white;
-                padding: 14px 24px;
+                padding: 16px 24px;
                 font-size: 16px;
                 font-weight: bold;
+                min-height: 20px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -75,22 +77,77 @@ class LoginWindow(QDialog):
             today = datetime.now()
             
             if today > expiry:
-                QMessageBox.critical(
-                    self,
-                    "라이선스 만료",
-                    f"프로그램 사용 기간이 만료되었습니다.\n만료일: {self.EXPIRY_DATE}"
-                )
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.setWindowTitle("라이선스 만료")
+                msg.setText(f"프로그램 사용 기간이 만료되었습니다.\n만료일: {self.EXPIRY_DATE}")
+                msg.setStyleSheet("""
+                    QMessageBox {
+                        background-color: white;
+                    }
+                    QLabel {
+                        color: #1d1d1f;
+                        font-size: 14px;
+                    }
+                    QPushButton {
+                        background-color: #007AFF;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 8px 16px;
+                        min-width: 80px;
+                    }
+                """)
+                msg.exec()
                 sys.exit(0)
             
             remaining_days = (expiry - today).days
             if remaining_days <= 30:
-                QMessageBox.warning(
-                    self,
-                    "라이선스 경고",
-                    f"프로그램 사용 기간이 {remaining_days}일 남았습니다.\n만료일: {self.EXPIRY_DATE}"
-                )
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Warning)
+                msg.setWindowTitle("라이선스 경고")
+                msg.setText(f"프로그램 사용 기간이 {remaining_days}일 남았습니다.\n만료일: {self.EXPIRY_DATE}")
+                msg.setStyleSheet("""
+                    QMessageBox {
+                        background-color: white;
+                    }
+                    QLabel {
+                        color: #1d1d1f;
+                        font-size: 14px;
+                    }
+                    QPushButton {
+                        background-color: #007AFF;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 8px 16px;
+                        min-width: 80px;
+                    }
+                """)
+                msg.exec()
         except Exception as e:
-            QMessageBox.critical(self, "오류", f"라이선스 체크 실패: {str(e)}")
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("오류")
+            msg.setText(f"라이선스 체크 실패: {str(e)}")
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 14px;
+                }
+                QPushButton {
+                    background-color: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    min-width: 80px;
+                }
+            """)
+            msg.exec()
             sys.exit(1)
     
     def _create_ui(self):
@@ -102,16 +159,16 @@ class LoginWindow(QDialog):
         title = QLabel("🎯 Milestone Manager")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setFont(QFont("Apple SD Gothic Neo", 28, QFont.Weight.Bold))
-        title.setStyleSheet("margin-bottom: 10px;")
+        title.setStyleSheet("margin-bottom: 10px; color: #1d1d1f;")
         layout.addWidget(title)
         
         license_info = QLabel(f"라이선스 만료일: {self.EXPIRY_DATE}")
         license_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        license_info.setStyleSheet("color: #888888; font-size: 12px; margin-bottom: 20px;")
+        license_info.setStyleSheet("color: #86868b; font-size: 12px; margin-bottom: 20px;")
         layout.addWidget(license_info)
         
         username_label = QLabel("Username")
-        username_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        username_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: #1d1d1f;")
         layout.addWidget(username_label)
         
         self.username_input = QLineEdit()
@@ -119,7 +176,7 @@ class LoginWindow(QDialog):
         layout.addWidget(self.username_input)
         
         password_label = QLabel("Password")
-        password_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        password_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: #1d1d1f;")
         layout.addWidget(password_label)
         
         self.password_input = QLineEdit()
@@ -130,7 +187,6 @@ class LoginWindow(QDialog):
         
         login_btn = QPushButton("로그인")
         login_btn.clicked.connect(self._login)
-        login_btn.setFixedHeight(50)
         layout.addWidget(login_btn, 0, Qt.AlignmentFlag.AlignCenter)
         
         layout.addStretch()
@@ -146,7 +202,28 @@ class LoginWindow(QDialog):
             self.authenticated = True
             self.accept()
         else:
-            QMessageBox.critical(self, "로그인 실패", "아이디 또는 비밀번호가 올바르지 않습니다.")
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("로그인 실패")
+            msg.setText("아이디 또는 비밀번호가 올바르지 않습니다.")
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 14px;
+                }
+                QPushButton {
+                    background-color: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    min-width: 80px;
+                }
+            """)
+            msg.exec()
             self.password_input.clear()
 
 

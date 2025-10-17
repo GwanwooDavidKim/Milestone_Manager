@@ -1,4 +1,4 @@
-"""메인 UI 윈도우 모듈 - 애플 스타일의 현대적인 GUI"""
+"""메인 UI 윈도우 모듈 - 라이트 모드 디자인"""
 
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                               QPushButton, QScrollArea, QLabel, QCheckBox,
@@ -13,7 +13,7 @@ from timeline_canvas import TimelineCanvas
 
 
 class MainWindow(QMainWindow):
-    """애플 스타일의 메인 윈도우"""
+    """라이트 모드 메인 윈도우"""
     
     def __init__(self):
         super().__init__()
@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("""
             QMainWindow {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #0a0a0a, stop:1 #1a1a1a);
+                    stop:0 #f5f5f7, stop:1 #ffffff);
             }
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -38,9 +38,10 @@ class MainWindow(QMainWindow):
                 border: none;
                 border-radius: 10px;
                 color: white;
-                padding: 12px 24px;
+                padding: 14px 24px;
                 font-size: 14px;
                 font-weight: bold;
+                min-height: 16px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -50,15 +51,17 @@ class MainWindow(QMainWindow):
                 background: #0051D5;
             }
             QPushButton#secondary {
-                background: rgba(255, 255, 255, 0.08);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: #e8e8ed;
+                color: #1d1d1f;
+                border: 1px solid #d2d2d7;
             }
             QPushButton#secondary:hover {
-                background: rgba(255, 255, 255, 0.12);
+                background: #d2d2d7;
             }
             QPushButton#danger {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #FF3B30, stop:1 #D32F2F);
+                color: white;
             }
             QPushButton#danger:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -69,7 +72,7 @@ class MainWindow(QMainWindow):
                 background: transparent;
             }
             QLabel {
-                color: white;
+                color: #1d1d1f;
             }
         """)
         
@@ -91,7 +94,7 @@ class MainWindow(QMainWindow):
         title_label.setStyleSheet("""
             font-size: 28px;
             font-weight: bold;
-            color: white;
+            color: #1d1d1f;
             margin-bottom: 10px;
         """)
         main_layout.addWidget(title_label)
@@ -141,23 +144,48 @@ class MainWindow(QMainWindow):
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll)
     
+    def _show_message(self, icon, title, text):
+        """메시지 박스 표시 (라이트 모드 스타일)"""
+        msg = QMessageBox(self)
+        msg.setIcon(icon)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+            }
+            QLabel {
+                color: #1d1d1f;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                min-width: 80px;
+            }
+        """)
+        return msg.exec()
+    
     def load_data(self):
         """데이터 로드"""
         try:
             self.data_manager.load_data()
             self._refresh_ui()
-            QMessageBox.information(self, "성공", "데이터를 성공적으로 불러왔습니다.")
+            self._show_message(QMessageBox.Icon.Information, "성공", "데이터를 성공적으로 불러왔습니다.")
         except Exception as e:
-            QMessageBox.critical(self, "오류", str(e))
+            self._show_message(QMessageBox.Icon.Critical, "오류", str(e))
     
     def save_data(self):
         """데이터 저장"""
         try:
             data = {"milestones": self.data_manager.get_milestones()}
             self.data_manager.save_data(data)
-            QMessageBox.information(self, "성공", "데이터가 저장되었습니다.")
+            self._show_message(QMessageBox.Icon.Information, "성공", "데이터가 저장되었습니다.")
         except Exception as e:
-            QMessageBox.critical(self, "오류", str(e))
+            self._show_message(QMessageBox.Icon.Critical, "오류", str(e))
     
     def create_milestone(self):
         """마일스톤 생성"""
@@ -172,15 +200,33 @@ class MainWindow(QMainWindow):
     def delete_selected_milestones(self):
         """선택된 마일스톤 삭제"""
         if not self.selected_milestone_ids:
-            QMessageBox.warning(self, "경고", "삭제할 마일스톤을 선택해주세요.")
+            self._show_message(QMessageBox.Icon.Warning, "경고", "삭제할 마일스톤을 선택해주세요.")
             return
         
         count = len(self.selected_milestone_ids)
-        reply = QMessageBox.question(
-            self, "확인",
-            f"{count}개의 마일스톤을 삭제하시겠습니까?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setWindowTitle("확인")
+        msg.setText(f"{count}개의 마일스톤을 삭제하시겠습니까?")
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+            }
+            QLabel {
+                color: #1d1d1f;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                min-width: 80px;
+            }
+        """)
+        reply = msg.exec()
         
         if reply == QMessageBox.StandardButton.Yes:
             for milestone_id in self.selected_milestone_ids:
@@ -198,7 +244,7 @@ class MainWindow(QMainWindow):
     def export_image(self):
         """이미지 내보내기"""
         if not self.milestone_widgets:
-            QMessageBox.warning(self, "경고", "내보낼 마일스톤이 없습니다.")
+            self._show_message(QMessageBox.Icon.Warning, "경고", "내보낼 마일스톤이 없습니다.")
             return
         
         filename, _ = QFileDialog.getSaveFileName(
@@ -212,9 +258,9 @@ class MainWindow(QMainWindow):
                 widget = self.milestone_widgets[0]
                 pixmap = widget.grab()
                 pixmap.save(filename)
-                QMessageBox.information(self, "성공", f"이미지가 저장되었습니다: {filename}")
+                self._show_message(QMessageBox.Icon.Information, "성공", f"이미지가 저장되었습니다: {filename}")
             except Exception as e:
-                QMessageBox.critical(self, "오류", f"이미지 저장 실패: {str(e)}")
+                self._show_message(QMessageBox.Icon.Critical, "오류", f"이미지 저장 실패: {str(e)}")
     
     def _refresh_ui(self):
         """UI 새로고침"""
@@ -230,7 +276,7 @@ class MainWindow(QMainWindow):
         if not milestones:
             empty_label = QLabel("마일스톤이 없습니다. '➕ Milestone 생성' 버튼을 눌러 시작하세요.")
             empty_label.setStyleSheet("""
-                color: #666666;
+                color: #86868b;
                 font-size: 16px;
                 padding: 40px;
             """)
@@ -274,17 +320,12 @@ class MainWindow(QMainWindow):
         return True
     
     def _create_milestone_block(self, milestone: Dict):
-        """리퀴드 글래스 스타일의 마일스톤 블록 생성"""
+        """라이트 모드 마일스톤 블록 생성"""
         block = QFrame()
         block.setStyleSheet("""
             QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(30, 30, 30, 0.8), stop:1 rgba(20, 20, 20, 0.9));
-                border: 2px solid;
-                border-image: linear-gradient(135deg, 
-                    rgba(74, 158, 255, 0.6), 
-                    rgba(138, 99, 255, 0.6),
-                    rgba(74, 158, 255, 0.6)) 1;
+                background: white;
+                border: 2px solid #e8e8ed;
                 border-radius: 16px;
             }
         """)
@@ -302,8 +343,8 @@ class MainWindow(QMainWindow):
                 width: 20px;
                 height: 20px;
                 border-radius: 6px;
-                border: 2px solid rgba(255, 255, 255, 0.3);
-                background: rgba(255, 255, 255, 0.05);
+                border: 2px solid #d2d2d7;
+                background: white;
             }
             QCheckBox::indicator:checked {
                 background: #007AFF;
@@ -322,14 +363,14 @@ class MainWindow(QMainWindow):
         title.setStyleSheet("""
             font-size: 22px;
             font-weight: bold;
-            color: white;
+            color: #1d1d1f;
         """)
         title_layout.addWidget(title)
         
         subtitle = QLabel(milestone.get("subtitle", ""))
         subtitle.setStyleSheet("""
             font-size: 14px;
-            color: #999999;
+            color: #86868b;
         """)
         title_layout.addWidget(subtitle)
         
@@ -339,19 +380,16 @@ class MainWindow(QMainWindow):
         btn_layout.setSpacing(10)
         
         add_btn = QPushButton("➕ Node 추가")
-        add_btn.setFixedHeight(35)
         add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
         btn_layout.addWidget(add_btn)
         
         edit_btn = QPushButton("✏️ Node 수정")
         edit_btn.setObjectName("secondary")
-        edit_btn.setFixedHeight(35)
         edit_btn.clicked.connect(lambda: self._edit_node(milestone["id"]))
         btn_layout.addWidget(edit_btn)
         
         delete_btn = QPushButton("🗑️ Node 삭제")
         delete_btn.setObjectName("danger")
-        delete_btn.setFixedHeight(35)
         delete_btn.clicked.connect(lambda: self._delete_node(milestone["id"]))
         btn_layout.addWidget(delete_btn)
         
@@ -393,7 +431,7 @@ class MainWindow(QMainWindow):
     def _edit_node(self, milestone_id: str):
         """노드 수정"""
         if not self.selected_node:
-            QMessageBox.warning(self, "경고", "수정할 노드를 먼저 선택해주세요.")
+            self._show_message(QMessageBox.Icon.Warning, "경고", "수정할 노드를 먼저 선택해주세요.")
             return
         
         dialog = NodeDialog(self, node_data=self.selected_node)
@@ -409,14 +447,32 @@ class MainWindow(QMainWindow):
     def _delete_node(self, milestone_id: str):
         """노드 삭제"""
         if not self.selected_node:
-            QMessageBox.warning(self, "경고", "삭제할 노드를 먼저 선택해주세요.")
+            self._show_message(QMessageBox.Icon.Warning, "경고", "삭제할 노드를 먼저 선택해주세요.")
             return
         
-        reply = QMessageBox.question(
-            self, "확인",
-            "선택한 노드를 삭제하시겠습니까?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setWindowTitle("확인")
+        msg.setText("선택한 노드를 삭제하시겠습니까?")
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+            }
+            QLabel {
+                color: #1d1d1f;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                min-width: 80px;
+            }
+        """)
+        reply = msg.exec()
         
         if reply == QMessageBox.StandardButton.Yes:
             self.data_manager.delete_node(milestone_id, self.selected_node["id"])
