@@ -146,6 +146,11 @@ class MainWindow(QMainWindow):
         search_btn.clicked.connect(self.open_search_filter)
         toolbar.addWidget(search_btn)
         
+        this_month_btn = QPushButton("📌 이번달 일정")
+        this_month_btn.setObjectName("secondary")
+        this_month_btn.clicked.connect(self.filter_this_month)
+        toolbar.addWidget(this_month_btn)
+        
         export_btn = QPushButton("📤 이미지 내보내기")
         export_btn.setObjectName("secondary")
         export_btn.clicked.connect(self.export_image)
@@ -328,6 +333,21 @@ class MainWindow(QMainWindow):
             self._update_filter_status()
             self._refresh_ui()
     
+    def filter_this_month(self):
+        """이번달 일정 필터"""
+        from datetime import datetime
+        today = datetime.now()
+        current_year = today.year % 100
+        current_month = today.month
+        
+        self.filter_settings = {
+            "this_month": True,
+            "current_year": current_year,
+            "current_month": current_month
+        }
+        self._update_filter_status()
+        self._refresh_ui()
+    
     def clear_filter(self):
         """필터 해제"""
         self.filter_settings = None
@@ -340,7 +360,11 @@ class MainWindow(QMainWindow):
             status_parts = []
             keyword = self.filter_settings.get("keyword", "")
             shape = self.filter_settings.get("shape", "")
+            this_month = self.filter_settings.get("this_month", False)
             
+            if this_month:
+                current_month = self.filter_settings.get("current_month", 0)
+                status_parts.append(f"📌 이번달 일정 ({current_month}월)")
             if keyword:
                 status_parts.append(f"키워드: '{keyword}'")
             if shape:
@@ -455,6 +479,48 @@ class MainWindow(QMainWindow):
         
         keyword = self.filter_settings.get("keyword", "")
         shape_filter = self.filter_settings.get("shape")
+        this_month = self.filter_settings.get("this_month", False)
+        
+        # 이번달 일정 필터
+        if this_month:
+            current_year = self.filter_settings.get("current_year", 0)
+            current_month = self.filter_settings.get("current_month", 0)
+            
+            # 노드 중에 이번달에 해당하는 노드가 있는지 확인
+            has_this_month_node = False
+            for node in milestone.get("nodes", []):
+                date_str = node.get("date", "").strip().upper()
+                
+                # 날짜 파싱
+                if "Q" in date_str:
+                    # 24.Q3 형식
+                    parts = date_str.split("Q")
+                    if len(parts) == 2:
+                        try:
+                            year = int(parts[0].replace(".", "").strip())
+                            quarter = int(parts[1].strip())
+                            # 분기를 월로 변환 (Q1=3월, Q2=6월, Q3=9월, Q4=12월)
+                            month = quarter * 3
+                            if year == current_year and month == current_month:
+                                has_this_month_node = True
+                                break
+                        except:
+                            pass
+                else:
+                    # 24.10 형식
+                    parts = date_str.split(".")
+                    if len(parts) == 2:
+                        try:
+                            year = int(parts[0].strip())
+                            month = int(parts[1].strip())
+                            if year == current_year and month == current_month:
+                                has_this_month_node = True
+                                break
+                        except:
+                            pass
+            
+            if not has_this_month_node:
+                return False
         
         # 키워드 검색: 제목과 부제목에서만
         if keyword:
