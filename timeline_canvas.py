@@ -174,6 +174,30 @@ class TimelineCanvas(QWidget):
                     tick_line = self.scene.addLine(x_pos, timeline_y - 10, x_pos, timeline_y + 10)
                     tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
         
+        # 현재 날짜 표시 (빨간 점선)
+        from datetime import datetime
+        today = datetime.now()
+        current_year = today.year % 100  # 2025 -> 25
+        current_month = today.month
+        
+        # 현재 날짜가 타임라인 범위에 있는지 확인
+        if current_year in years:
+            year_idx = years.index(current_year)
+            year_x = start_x + (year_idx * year_spacing)
+            month_offset = (current_month - 1) * (year_spacing / 12)
+            current_x = year_x + month_offset
+            
+            # 빨간 점선 그리기
+            pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
+            current_line = self.scene.addLine(current_x, timeline_y - 100, current_x, timeline_y + 100)
+            current_line.setPen(pen)
+            
+            # "오늘" 표시
+            today_text = self.scene.addText("📍 오늘")
+            today_text.setDefaultTextColor(QColor("#FF3B30"))
+            today_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
+            today_text.setPos(current_x - 20, timeline_y - 120)
+        
         # 노드 위치 계산
         node_positions = self._calculate_node_positions(sorted_nodes, years, year_spacing, 
                                                          start_x, timeline_y)
