@@ -91,7 +91,7 @@ class MilestoneDialog(ModernDialog):
     
     def __init__(self, parent=None, milestone_data: Optional[Dict] = None):
         super().__init__(parent, "마일스톤 생성" if not milestone_data else "마일스톤 수정")
-        self.setFixedSize(500, 250)
+        self.setFixedSize(500, 300)
         self.result = None
         
         layout = QVBoxLayout()
@@ -117,6 +117,8 @@ class MilestoneDialog(ModernDialog):
         if milestone_data:
             self.subtitle_input.setText(milestone_data.get("subtitle", ""))
         layout.addWidget(self.subtitle_input)
+        
+        layout.addSpacing(20)  # 버튼과 간격 추가
         
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
