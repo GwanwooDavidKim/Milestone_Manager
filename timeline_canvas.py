@@ -1,6 +1,6 @@
 """타임라인 캔버스 모듈 - 라이트 모드 타임라인과 노드 시각화"""
 
-from PyQt6.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsPathItem
+from PyQt6.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsPathItem, QCheckBox, QGraphicsProxyWidget
 from PyQt6.QtCore import Qt, QPointF, QRectF
 from PyQt6.QtGui import QPen, QBrush, QColor, QPainter, QPolygonF, QPainterPath, QFont
 from typing import List, Dict, Optional, Tuple
@@ -31,6 +31,7 @@ class TimelineCanvas(QWidget):
         self.view.setGeometry(0, 0, self.width(), self.height())
         self.node_items = {}
         self.selected_node_id = None
+        self.node_checkboxes = {}
         
         self.draw_timeline()
     
@@ -39,9 +40,10 @@ class TimelineCanvas(QWidget):
         self.draw_timeline()
     
     def draw_timeline(self):
-        """타임라인과 노드를 그립니다 - 개선 버전"""
+        """타임라인과 노드를 그립니다 - 연도별 균등 배치"""
         self.scene.clear()
         self.node_items.clear()
+        self.node_checkboxes.clear()
         
         width = self.width() - 100
         height = self.height()
@@ -59,11 +61,17 @@ class TimelineCanvas(QWidget):
         
         sorted_nodes = sorted(nodes, key=lambda n: self._parse_date(n.get("date", "")))
         
-        min_date = self._parse_date(sorted_nodes[0].get("date", ""))
-        max_date = self._parse_date(sorted_nodes[-1].get("date", ""))
+        # 연도 추출 (간단하게)
+        years = set()
+        for node in sorted_nodes:
+            date_val = self._parse_date(node.get("date", ""))
+            year = date_val // 100
+            years.add(year)
         
-        start_date = min_date - 12
-        end_date = max_date + 12
+        years = sorted(list(years))
+        
+        if not years:
+            return
         
         timeline_y = height / 2
         start_x = 80
@@ -78,45 +86,41 @@ class TimelineCanvas(QWidget):
         gradient_rect.setPen(QPen(Qt.PenStyle.NoPen))
         gradient_rect.setBrush(QBrush(QColor("#007AFF")))
         
-        date_range = end_date - start_date
+        # 연도별 균등 간격 계산
+        num_years = len(years)
+        year_spacing = timeline_width / num_years if num_years > 1 else timeline_width
         
-        # 분기별 큰 눈금선 (균등 간격)
-        start_year = start_date // 100
-        end_year = end_date // 100
-        
-        for year in range(start_year, end_year + 1):
+        # 각 연도에 대해 분기별 눈금 그리기
+        for i, year in enumerate(years):
+            year_x = start_x + (i * year_spacing)
+            
+            # 각 분기별 위치 계산
             for quarter in [1, 2, 3, 4]:
-                month = quarter * 3  # Q1=3, Q2=6, Q3=9, Q4=12
-                date_val = year * 100 + month
+                # 분기를 년도 내에서 균등하게 배치
+                quarter_offset = (quarter - 1) * (year_spacing / 4)
+                x_pos = year_x + quarter_offset
                 
-                if start_date <= date_val <= end_date:
-                    # 날짜 범위 전체에 대한 비율로 x 좌표 계산
-                    x_pos = start_x + ((date_val - start_date) / date_range) * timeline_width
-                    
-                    # 큰 눈금선
-                    tick_line = self.scene.addLine(x_pos, timeline_y - 20, x_pos, timeline_y + 20)
-                    tick_line.setPen(QPen(QColor("#86868b"), 2))
-                    
-                    # 분기 표시
-                    quarter_text = self.scene.addText(f"{year:02d}.Q{quarter}")
-                    quarter_text.setDefaultTextColor(QColor("#1d1d1f"))
-                    quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
-                    quarter_text.setPos(x_pos - 25, timeline_y - 45)
-        
-        # 월별 작은 눈금선 (균등 간격)
-        for year in range(start_year, end_year + 1):
+                # 큰 눈금선
+                tick_line = self.scene.addLine(x_pos, timeline_y - 20, x_pos, timeline_y + 20)
+                tick_line.setPen(QPen(QColor("#86868b"), 2))
+                
+                # 분기 표시
+                quarter_text = self.scene.addText(f"{year:02d}.Q{quarter}")
+                quarter_text.setDefaultTextColor(QColor("#1d1d1f"))
+                quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+                quarter_text.setPos(x_pos - 25, timeline_y - 45)
+            
+            # 월별 작은 눈금 (각 연도 내에서 12개월 균등 배치)
             for month in range(1, 13):
-                date_val = year * 100 + month
-                
-                if start_date <= date_val <= end_date:
-                    # 분기 시작 월은 이미 큰 눈금으로 표시했으므로 제외
-                    if month not in [3, 6, 9, 12]:
-                        x_pos = start_x + ((date_val - start_date) / date_range) * timeline_width
-                        tick_line = self.scene.addLine(x_pos, timeline_y - 10, x_pos, timeline_y + 10)
-                        tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
+                if month not in [3, 6, 9, 12]:  # 분기 시작 월 제외
+                    month_offset = (month - 1) * (year_spacing / 12)
+                    x_pos = year_x + month_offset
+                    tick_line = self.scene.addLine(x_pos, timeline_y - 10, x_pos, timeline_y + 10)
+                    tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
         
-        node_positions = self._calculate_node_positions(sorted_nodes, start_date, end_date, 
-                                                         start_x, timeline_width, timeline_y)
+        # 노드 위치 계산
+        node_positions = self._calculate_node_positions(sorted_nodes, years, year_spacing, 
+                                                         start_x, timeline_y)
         
         for node_data, x, y in node_positions:
             self._draw_node(node_data, x, y, timeline_y)
@@ -131,7 +135,6 @@ class TimelineCanvas(QWidget):
                 try:
                     year = int(parts[0].replace(".", "").strip())
                     quarter = int(parts[1].strip())
-                    # Q1=3월, Q2=6월, Q3=9월, Q4=12월
                     month = quarter * 3
                     return year * 100 + month
                 except:
@@ -147,27 +150,37 @@ class TimelineCanvas(QWidget):
                     return 2000
         return 2000
     
-    def _calculate_node_positions(self, nodes: List[Dict], start_date: int, end_date: int,
-                                   start_x: float, timeline_width: float, timeline_y: float) -> List[Tuple]:
-        """노드 위치 계산 - 마일스톤 근처에 배치"""
+    def _calculate_node_positions(self, nodes: List[Dict], years: List[int], 
+                                   year_spacing: float, start_x: float, 
+                                   timeline_y: float) -> List[Tuple]:
+        """노드 위치 계산 - 연도 기반"""
         layout = []
-        date_range = end_date - start_date
         occupied_positions = []
         
         for i, node in enumerate(nodes):
             date = node.get("date", "")
             date_val = self._parse_date(date)
+            year = date_val // 100
+            month = date_val % 100
             
-            x_pos = start_x + ((date_val - start_date) / date_range) * timeline_width
+            # 연도 인덱스 찾기
+            if year in years:
+                year_idx = years.index(year)
+                # 연도 시작 위치 + 월별 오프셋
+                year_x = start_x + (year_idx * year_spacing)
+                month_offset = (month - 1) * (year_spacing / 12)
+                x_pos = year_x + month_offset
+            else:
+                x_pos = start_x
             
-            # 마일스톤 근처에 배치 (기본 거리를 작게)
+            # 마일스톤 근처에 배치
             y_offset = 0
             alternating = i % 2
-            base_distance = 50  # 기본 거리 줄임
+            base_distance = 50
             
-            # 겹침 체크 (더 작은 간격으로)
+            # 겹침 체크
             for occupied_x, occupied_y in occupied_positions:
-                if abs(occupied_x - x_pos) < 80:  # 겹침 체크 거리 줄임
+                if abs(occupied_x - x_pos) < 80:
                     y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 40)
             
             if alternating == 0:
@@ -181,7 +194,7 @@ class TimelineCanvas(QWidget):
         return layout
     
     def _draw_node(self, node_data: Dict, x: float, y: float, timeline_y: float):
-        """노드를 그립니다 - 날짜 표시 추가, 간격 조정"""
+        """노드를 그립니다 - 체크박스 포함"""
         shape = node_data.get("shape", "●(동그라미)")
         color = QColor(node_data.get("color", "#FF6B6B"))
         content = node_data.get("content", "")
@@ -235,16 +248,36 @@ class TimelineCanvas(QWidget):
             node_item.setPen(QPen(QColor("white"), 2))
         
         if node_item:
-            # 툴팁 설정 (메모 우선)
             tooltip_text = memo if memo else content
             node_item.setToolTip(tooltip_text)
-            node_item.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsSelectable)
-            
-            # 선택된 노드 표시
-            if node_id == self.selected_node_id:
-                node_item.setPen(QPen(QColor("#007AFF"), 4))
         
-        # 날짜와 내용 텍스트 - 간격 조정
+        # 체크박스 추가 (노드 왼쪽)
+        checkbox = QCheckBox()
+        checkbox.setStyleSheet("""
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                border: 2px solid #d2d2d7;
+                background: white;
+            }
+            QCheckBox::indicator:checked {
+                background: #007AFF;
+                border: 2px solid #007AFF;
+            }
+            QCheckBox::indicator:hover {
+                border: 2px solid #007AFF;
+            }
+        """)
+        checkbox.stateChanged.connect(
+            lambda state: self._on_checkbox_changed(node_data, state == Qt.CheckState.Checked.value)
+        )
+        
+        checkbox_proxy = self.scene.addWidget(checkbox)
+        checkbox_proxy.setPos(x - 35, y - 10)
+        self.node_checkboxes[node_id] = checkbox
+        
+        # 날짜와 내용 텍스트
         if y < timeline_y:  # 노드가 위에 있을 때
             # 날짜 (노드 바로 위)
             date_text = self.scene.addText(date)
@@ -280,8 +313,39 @@ class TimelineCanvas(QWidget):
             attach_text.setFont(QFont("Apple Color Emoji", 12))
             attach_text.setPos(x + 15, y - 15)
             attach_text.setToolTip(f"파일: {attachment}")
+            
+            # 첨부파일 클릭 가능하게
+            attach_text.setFlag(QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+            attach_text.mousePressEvent = lambda event: self._open_attachment(attachment)
         
         self.node_items[node_id] = node_item
+    
+    def _on_checkbox_changed(self, node_data: Dict, is_checked: bool):
+        """체크박스 상태 변경"""
+        if is_checked:
+            self.selected_node_id = node_data.get("id")
+            if self.on_node_click:
+                self.on_node_click(node_data)
+            
+            # 다른 체크박스 해제
+            for nid, checkbox in self.node_checkboxes.items():
+                if nid != self.selected_node_id:
+                    checkbox.setChecked(False)
+        else:
+            if self.selected_node_id == node_data.get("id"):
+                self.selected_node_id = None
+                if self.on_node_click:
+                    self.on_node_click(None)
+    
+    def _open_attachment(self, attachment: str):
+        """첨부파일 열기"""
+        if attachment and os.path.exists(attachment):
+            if platform.system() == 'Windows':
+                os.startfile(attachment)  # type: ignore
+            elif platform.system() == 'Darwin':
+                os.system(f'open "{attachment}"')
+            else:
+                os.system(f'xdg-open "{attachment}"')
     
     def _get_star_path(self, cx: float, cy: float, r: float, points: int = 5) -> QPainterPath:
         """별 모양 경로 생성"""
@@ -305,32 +369,3 @@ class TimelineCanvas(QWidget):
         
         path.closeSubpath()
         return path
-    
-    def mousePressEvent(self, event):
-        """마우스 클릭 이벤트 - 노드 선택"""
-        scene_pos = self.view.mapToScene(event.pos())
-        item = self.scene.itemAt(scene_pos, self.view.transform())
-        
-        for node_id, node_item in self.node_items.items():
-            if item == node_item:
-                for node in self.milestone_data.get("nodes", []):
-                    if node.get("id") == node_id:
-                        # 노드 선택
-                        self.selected_node_id = node_id
-                        if self.on_node_click:
-                            self.on_node_click(node)
-                        
-                        # 선택 표시를 위해 다시 그리기
-                        self.draw_timeline()
-                        
-                        # 첨부파일 실행
-                        attachment = node.get("attachment", "")
-                        if attachment and os.path.exists(attachment):
-                            if platform.system() == 'Windows':
-                                os.startfile(attachment)  # type: ignore
-                            elif platform.system() == 'Darwin':
-                                os.system(f'open "{attachment}"')
-                            else:
-                                os.system(f'xdg-open "{attachment}"')
-                        break
-                break

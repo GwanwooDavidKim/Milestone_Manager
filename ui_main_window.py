@@ -424,10 +424,14 @@ class MainWindow(QMainWindow):
             self.data_manager.add_node(milestone_id, dialog.result)
             self._refresh_ui()
     
-    def _on_node_selected(self, milestone_id: str, node_data: Dict):
+    def _on_node_selected(self, milestone_id: str, node_data: Optional[Dict]):
         """노드 선택"""
-        self.current_milestone_id = milestone_id
-        self.selected_node = node_data
+        if node_data:
+            self.current_milestone_id = milestone_id
+            self.selected_node = node_data
+        else:
+            self.current_milestone_id = None
+            self.selected_node = None
     
     def _edit_node(self, milestone_id: str):
         """노드 수정"""

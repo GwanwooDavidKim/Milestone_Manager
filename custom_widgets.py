@@ -30,9 +30,10 @@ class ModernDialog(QDialog):
                 background-color: white;
                 border: 1px solid #d2d2d7;
                 border-radius: 8px;
-                padding: 10px 12px;
+                padding: 12px;
                 color: #1d1d1f;
                 font-size: 14px;
+                min-height: 24px;
             }
             QLineEdit:focus, QTextEdit:focus {
                 border: 2px solid #007AFF;
