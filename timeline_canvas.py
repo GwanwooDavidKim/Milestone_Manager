@@ -135,13 +135,13 @@ class TimelineCanvas(QWidget):
         end_x = width - 20
         timeline_width = end_x - start_x
         
-        # 타임라인 막대 (파란색)
+        # 타임라인 막대 (다크 블루그레이)
         gradient_rect = self.scene.addRect(
             start_x - 5, timeline_y - 3,
             timeline_width + 10, 6
         )
         gradient_rect.setPen(QPen(Qt.PenStyle.NoPen))
-        gradient_rect.setBrush(QBrush(QColor("#007AFF")))
+        gradient_rect.setBrush(QBrush(QColor("#2C3E50")))
         
         # 연도별 균등 간격 계산
         num_years = len(years)

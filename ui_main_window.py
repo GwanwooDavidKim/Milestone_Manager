@@ -78,6 +78,9 @@ class MainWindow(QMainWindow):
         self._create_ui()
         
         # 단축키 설정
+        load_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
+        load_shortcut.activated.connect(self.load_data)
+        
         save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         save_shortcut.activated.connect(self.save_data)
         
@@ -106,7 +109,7 @@ class MainWindow(QMainWindow):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(10)
         
-        load_btn = QPushButton("📂 Data Load")
+        load_btn = QPushButton("📂 Data Load (Ctrl+L)")
         load_btn.clicked.connect(self.load_data)
         toolbar.addWidget(load_btn)
         
