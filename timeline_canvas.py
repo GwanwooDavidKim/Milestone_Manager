@@ -106,17 +106,17 @@ class TimelineCanvas(QWidget):
             return
         
         nodes = self.milestone_data.get("nodes", [])
-        if not nodes:
-            no_data_text = self.scene.addText("노드가 없습니다. 'Node 추가' 버튼을 눌러 이벤트를 추가하세요.")
-            no_data_text.setDefaultTextColor(QColor("#86868b"))
-            no_data_text.setFont(QFont("Apple SD Gothic Neo", 14))
-            no_data_text.setPos(width/2 - 200, height/2 - 20)
-            return
         
-        sorted_nodes = sorted(nodes, key=lambda n: self._parse_date(n.get("date", "")))
+        # 현재 년도는 항상 포함
+        from datetime import datetime
+        current_year = datetime.now().year % 100  # 2025 -> 25
         
-        # 연도 추출 (빈 연도 포함)
+        sorted_nodes = sorted(nodes, key=lambda n: self._parse_date(n.get("date", ""))) if nodes else []
+        
+        # 연도 추출 (빈 연도 포함 + 현재 년도 기본 포함)
         years_set = set()
+        years_set.add(current_year)  # 현재 년도는 항상 포함
+        
         for node in sorted_nodes:
             date_val = self._parse_date(node.get("date", ""))
             year = date_val // 100
@@ -175,9 +175,7 @@ class TimelineCanvas(QWidget):
                     tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
         
         # 현재 날짜 표시 (빨간 점선)
-        from datetime import datetime
         today = datetime.now()
-        current_year = today.year % 100  # 2025 -> 25
         current_month = today.month
         
         # 현재 날짜가 타임라인 범위에 있는지 확인
@@ -187,16 +185,16 @@ class TimelineCanvas(QWidget):
             month_offset = (current_month - 1) * (year_spacing / 12)
             current_x = year_x + month_offset
             
-            # 빨간 점선 그리기
+            # 빨간 점선 그리기 (Block 전체 높이)
             pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
-            current_line = self.scene.addLine(current_x, timeline_y - 100, current_x, timeline_y + 100)
+            current_line = self.scene.addLine(current_x, 20, current_x, height - 20)
             current_line.setPen(pen)
             
-            # "오늘" 표시
-            today_text = self.scene.addText("📍 오늘")
-            today_text.setDefaultTextColor(QColor("#FF3B30"))
-            today_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
-            today_text.setPos(current_x - 20, timeline_y - 120)
+            # "이번달" 표시 (점선 오른쪽 위)
+            month_text = self.scene.addText("이번달")
+            month_text.setDefaultTextColor(QColor("#FF3B30"))
+            month_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
+            month_text.setPos(current_x + 5, 25)
         
         # 노드 위치 계산
         node_positions = self._calculate_node_positions(sorted_nodes, years, year_spacing, 
