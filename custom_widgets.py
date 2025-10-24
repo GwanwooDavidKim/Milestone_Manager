@@ -358,7 +358,7 @@ class SearchFilterDialog(ModernDialog):
         
         layout.addWidget(QLabel("키워드 검색"))
         self.keyword_input = QLineEdit()
-        self.keyword_input.setPlaceholderText("제목, 부제목, 내용에서 검색")
+        self.keyword_input.setPlaceholderText("제목, 부제목에서 검색")
         layout.addWidget(self.keyword_input)
         
         layout.addWidget(QLabel("모양 필터"))
