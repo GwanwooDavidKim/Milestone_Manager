@@ -100,9 +100,8 @@ class TimelineCanvas(QWidget):
         self.node_checkboxes.clear()
         
         width = self.width() - 100
-        height = self.height()
         
-        if width < 100 or height < 100:
+        if width < 100:
             return
         
         nodes = self.milestone_data.get("nodes", [])
@@ -178,17 +177,12 @@ class TimelineCanvas(QWidget):
         today = datetime.now()
         current_month = today.month
         
-        # 현재 날짜가 타임라인 범위에 있는지 확인
+        # "이번달" 텍스트 (점선은 나중에 그림)
         if current_year in years:
             year_idx = years.index(current_year)
             year_x = start_x + (year_idx * year_spacing)
             month_offset = (current_month - 1) * (year_spacing / 12)
             current_x = year_x + month_offset
-            
-            # 빨간 점선 그리기 (Block 전체 높이 - 충분히 길게)
-            pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
-            current_line = self.scene.addLine(current_x, 20, current_x, height + 200)
-            current_line.setPen(pen)
             
             # "이번달" 표시 (점선 오른쪽 위)
             month_text = self.scene.addText("이번달")
@@ -199,6 +193,33 @@ class TimelineCanvas(QWidget):
         # 노드 위치 계산
         node_positions = self._calculate_node_positions(sorted_nodes, years, year_spacing, 
                                                          start_x, timeline_y)
+        
+        # 동적 높이 계산 - 모든 노드가 보이도록
+        if node_positions:
+            min_y = min(y for _, _, y in node_positions)
+            max_y = max(y for _, _, y in node_positions)
+            required_height = max(600, max_y - min_y + 300)  # 최소 600, 여유 300
+        else:
+            required_height = 600
+        
+        # 이번달 점선 높이 업데이트
+        if current_year in years:
+            year_idx = years.index(current_year)
+            year_x = start_x + (year_idx * year_spacing)
+            month_offset = (current_month - 1) * (year_spacing / 12)
+            current_x = year_x + month_offset
+            
+            # 빨간 점선 그리기 (동적 높이에 맞춰)
+            pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
+            current_line = self.scene.addLine(current_x, 20, current_x, required_height - 20)
+            current_line.setPen(pen)
+        
+        # Scene 크기 설정
+        self.scene.setSceneRect(0, 0, width + 100, required_height)
+        
+        # Widget 높이도 동적으로 설정하여 스크롤 제거
+        self.setMinimumHeight(int(required_height))
+        self.setMaximumHeight(int(required_height))
         
         for node_data, x, y in node_positions:
             self._draw_node(node_data, x, y, timeline_y)
@@ -278,12 +299,12 @@ class TimelineCanvas(QWidget):
                 else:
                     alternating = base_alternating  # 같은 방향
                 
-                # 겹침 체크
+                # 겹침 체크 - 간격을 충분히 크게 설정
                 y_offset = 0
-                base_distance = 50
+                base_distance = 100  # 기본 거리 증가
                 for occupied_x, occupied_y in occupied_positions:
                     if abs(occupied_x - x_pos) < 200:
-                        y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 40)
+                        y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 80)
                 
                 if alternating == 0:
                     y_pos = timeline_y - base_distance - y_offset
