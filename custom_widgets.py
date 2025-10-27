@@ -361,8 +361,8 @@ class DateFilterDialog(ModernDialog):
         
         layout.addWidget(QLabel("년도 선택"))
         self.year_combo = QComboBox()
-        # 현재 ±20년
-        years = [str(year) for year in range(current_year - 20, current_year + 21)]
+        # 현재 ±10년
+        years = [str(year) for year in range(current_year - 10, current_year + 11)]
         self.year_combo.addItems(years)
         # 현재 년도를 기본값으로
         self.year_combo.setCurrentText(str(current_year))

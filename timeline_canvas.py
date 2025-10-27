@@ -250,14 +250,14 @@ class TimelineCanvas(QWidget):
             else:
                 x_pos = start_x
             
-            # 마일스톤 근처에 배치
+            # 마일스톤 근처에 배치 (날짜 기반으로 위/아래 결정 - 삭제 시에도 일관성 유지)
             y_offset = 0
-            alternating = i % 2
+            alternating = date_val % 2  # 인덱스 대신 날짜값 기준으로 위/아래 결정
             base_distance = 50
             
-            # 겹침 체크
+            # 겹침 체크 (텍스트 길이 고려하여 더 넓게)
             for occupied_x, occupied_y in occupied_positions:
-                if abs(occupied_x - x_pos) < 80:
+                if abs(occupied_x - x_pos) < 200:  # 80 -> 200으로 확장 (텍스트 길이 고려)
                     y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 40)
             
             if alternating == 0:
