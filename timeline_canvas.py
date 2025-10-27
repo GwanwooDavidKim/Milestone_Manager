@@ -66,10 +66,11 @@ class MemoDialog(QDialog):
 class TimelineCanvas(QWidget):
     """라이트 모드 타임라인 시각화 컴포넌트"""
     
-    def __init__(self, parent=None, milestone_data: Dict = None, on_node_click=None):
+    def __init__(self, parent=None, milestone_data: Dict = None, on_node_click=None, is_zoomable=False):
         super().__init__(parent)
         self.milestone_data = milestone_data or {"nodes": []}
         self.on_node_click = on_node_click
+        self.is_zoomable = is_zoomable  # 확대 보기용인지 메인 UI용인지 구분
         
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene, self)
@@ -129,8 +130,11 @@ class TimelineCanvas(QWidget):
         max_year = max(years_set)
         years = list(range(min_year, max_year + 1))
         
-        # 타임라인은 상단에서 고정 거리에 위치
-        timeline_y = 250
+        # 타임라인은 중앙에 위치 (균형있는 배치)
+        if self.is_zoomable:
+            timeline_y = 300  # 확대 보기는 더 많은 공간
+        else:
+            timeline_y = 250  # 메인 UI는 고정
         start_x = 80
         end_x = width - 20
         timeline_width = end_x - start_x
@@ -195,91 +199,90 @@ class TimelineCanvas(QWidget):
         node_positions = self._calculate_node_positions(sorted_nodes, years, year_spacing, 
                                                          start_x, timeline_y)
         
-        # 노드 위치 기반 동적 높이 및 마진 계산
-        if node_positions:
-            min_y = min(y for _, _, y in node_positions)
-            max_y = max(y for _, _, y in node_positions)
+        # 메인 UI와 확대 보기 구분하여 처리
+        if self.is_zoomable:
+            # 확대 보기: 동적 높이 계산
+            if node_positions:
+                min_y = min(y for _, _, y in node_positions)
+                max_y = max(y for _, _, y in node_positions)
+                
+                top_margin = max(80, timeline_y - min_y + 50)
+                bottom_margin = max(80, max_y - timeline_y + 50)
+                adjusted_timeline_y = top_margin
+                
+                content_height = max_y - min_y
+                required_height = top_margin + content_height + bottom_margin
+                required_height = max(500, required_height)
+                
+                y_adjustment = adjusted_timeline_y - timeline_y
+                adjusted_positions = [(node, x, y + y_adjustment) for node, x, y in node_positions]
+            else:
+                required_height = 500
+                adjusted_timeline_y = timeline_y
+                adjusted_positions = []
             
-            # 상단 마진: timeline_y보다 위에 있는 노드들을 위한 공간
-            top_margin = max(80, timeline_y - min_y + 60)
-            # 하단 마진: timeline_y보다 아래에 있는 노드들을 위한 공간
-            bottom_margin = max(80, max_y - timeline_y + 60)
+            # 타임라인 다시 그리기
+            if node_positions:
+                self.scene.clear()
+                
+                gradient_rect = self.scene.addRect(start_x - 5, adjusted_timeline_y - 3, timeline_width + 10, 6)
+                gradient_rect.setPen(QPen(Qt.PenStyle.NoPen))
+                gradient_rect.setBrush(QBrush(QColor("#2C3E50")))
+                
+                for i, year in enumerate(years):
+                    year_x = start_x + (i * year_spacing)
+                    for quarter in [1, 2, 3, 4]:
+                        quarter_offset = (quarter - 1) * (year_spacing / 4)
+                        x_pos = year_x + quarter_offset
+                        tick_line = self.scene.addLine(x_pos, adjusted_timeline_y - 20, x_pos, adjusted_timeline_y + 20)
+                        tick_line.setPen(QPen(QColor("#86868b"), 2))
+                        quarter_text = self.scene.addText(f"{year:02d}.Q{quarter}")
+                        quarter_text.setDefaultTextColor(QColor("#1d1d1f"))
+                        quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+                        quarter_text.setPos(x_pos - 25, adjusted_timeline_y - 45)
+                    for month in range(1, 13):
+                        if month not in [3, 6, 9, 12]:
+                            month_offset = (month - 1) * (year_spacing / 12)
+                            x_pos = year_x + month_offset
+                            tick_line = self.scene.addLine(x_pos, adjusted_timeline_y - 10, x_pos, adjusted_timeline_y + 10)
+                            tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
+                
+                if current_year in years:
+                    year_idx = years.index(current_year)
+                    year_x = start_x + (year_idx * year_spacing)
+                    month_offset = (current_month - 1) * (year_spacing / 12)
+                    current_x = year_x + month_offset
+                    month_text = self.scene.addText("이번달")
+                    month_text.setDefaultTextColor(QColor("#FF3B30"))
+                    month_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
+                    month_text.setPos(current_x + 5, 25)
+                    pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
+                    current_line = self.scene.addLine(current_x, 20, current_x, required_height - 20)
+                    current_line.setPen(pen)
             
-            # timeline_y를 재조정하여 상단 마진 확보
-            adjusted_timeline_y = top_margin
+            self.scene.setSceneRect(0, 0, width + 100, required_height)
             
-            # 전체 높이 = 상단마진 + (max_y - min_y) + 하단마진
-            content_height = max_y - min_y
-            required_height = top_margin + content_height + bottom_margin
-            
-            # 최소 높이 보장
-            required_height = max(500, required_height)
-            
-            # 노드 위치를 조정된 timeline_y에 맞춰 재계산
-            y_adjustment = adjusted_timeline_y - timeline_y
-            adjusted_positions = [(node, x, y + y_adjustment) for node, x, y in node_positions]
+            for node_data, x, y in adjusted_positions:
+                self._draw_node(node_data, x, y, adjusted_timeline_y)
         else:
+            # 메인 UI: 500px 고정, 타임라인 중앙 배치
             required_height = 500
-            adjusted_timeline_y = 250
-            adjusted_positions = []
-        
-        # 타임라인 막대를 조정된 위치에 다시 그리기
-        if node_positions:
-            # 기존 타임라인 막대 제거하고 다시 그리기
-            self.scene.clear()
+            adjusted_timeline_y = timeline_y
             
-            # 타임라인 막대 (다크 블루그레이)
-            gradient_rect = self.scene.addRect(
-                start_x - 5, adjusted_timeline_y - 3,
-                timeline_width + 10, 6
-            )
-            gradient_rect.setPen(QPen(Qt.PenStyle.NoPen))
-            gradient_rect.setBrush(QBrush(QColor("#2C3E50")))
-            
-            # 각 연도에 대해 분기별 눈금 다시 그리기
-            for i, year in enumerate(years):
-                year_x = start_x + (i * year_spacing)
-                
-                for quarter in [1, 2, 3, 4]:
-                    quarter_offset = (quarter - 1) * (year_spacing / 4)
-                    x_pos = year_x + quarter_offset
-                    
-                    tick_line = self.scene.addLine(x_pos, adjusted_timeline_y - 20, x_pos, adjusted_timeline_y + 20)
-                    tick_line.setPen(QPen(QColor("#86868b"), 2))
-                    
-                    quarter_text = self.scene.addText(f"{year:02d}.Q{quarter}")
-                    quarter_text.setDefaultTextColor(QColor("#1d1d1f"))
-                    quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
-                    quarter_text.setPos(x_pos - 25, adjusted_timeline_y - 45)
-                
-                for month in range(1, 13):
-                    if month not in [3, 6, 9, 12]:
-                        month_offset = (month - 1) * (year_spacing / 12)
-                        x_pos = year_x + month_offset
-                        tick_line = self.scene.addLine(x_pos, adjusted_timeline_y - 10, x_pos, adjusted_timeline_y + 10)
-                        tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
-            
-            # "이번달" 텍스트와 점선
+            # 이번달 점선
             if current_year in years:
                 year_idx = years.index(current_year)
                 year_x = start_x + (year_idx * year_spacing)
                 month_offset = (current_month - 1) * (year_spacing / 12)
                 current_x = year_x + month_offset
-                
-                month_text = self.scene.addText("이번달")
-                month_text.setDefaultTextColor(QColor("#FF3B30"))
-                month_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
-                month_text.setPos(current_x + 5, 25)
-                
                 pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
-                current_line = self.scene.addLine(current_x, 20, current_x, required_height - 20)
+                current_line = self.scene.addLine(current_x, 50, current_x, required_height - 50)
                 current_line.setPen(pen)
-        
-        # Scene 크기 설정
-        self.scene.setSceneRect(0, 0, width + 100, required_height)
-        
-        for node_data, x, y in adjusted_positions:
-            self._draw_node(node_data, x, y, adjusted_timeline_y)
+            
+            self.scene.setSceneRect(0, 0, width + 100, required_height)
+            
+            for node_data, x, y in node_positions:
+                self._draw_node(node_data, x, y, timeline_y)
     
     def _parse_date(self, date_str: str) -> int:
         """날짜 문자열을 숫자로 변환"""
@@ -356,12 +359,12 @@ class TimelineCanvas(QWidget):
                 else:
                     alternating = base_alternating  # 같은 방향
                 
-                # 겹침 체크 - 간격을 충분히 크게 설정
+                # 겹침 체크 - 적절한 간격 설정
                 y_offset = 0
-                base_distance = 100  # 기본 거리 증가
+                base_distance = 70  # 기본 거리 적당하게
                 for occupied_x, occupied_y in occupied_positions:
                     if abs(occupied_x - x_pos) < 200:
-                        y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 80)
+                        y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 50)
                 
                 if alternating == 0:
                     y_pos = timeline_y - base_distance - y_offset
