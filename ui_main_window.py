@@ -359,6 +359,7 @@ class MainWindow(QMainWindow):
         if self.filter_settings:
             status_parts = []
             keyword = self.filter_settings.get("keyword", "")
+            content_keyword = self.filter_settings.get("content_keyword", "")
             shape = self.filter_settings.get("shape", "")
             this_month = self.filter_settings.get("this_month", False)
             
@@ -366,7 +367,9 @@ class MainWindow(QMainWindow):
                 current_month = self.filter_settings.get("current_month", 0)
                 status_parts.append(f"📌 이번달 일정 ({current_month}월)")
             if keyword:
-                status_parts.append(f"키워드: '{keyword}'")
+                status_parts.append(f"제목/부제목: '{keyword}'")
+            if content_keyword:
+                status_parts.append(f"내용: '{content_keyword}'")
             if shape:
                 status_parts.append(f"모양: {shape}")
             
@@ -527,6 +530,18 @@ class MainWindow(QMainWindow):
             title = milestone.get("title", "").lower()
             subtitle = milestone.get("subtitle", "").lower()
             if keyword.lower() not in title and keyword.lower() not in subtitle:
+                return False
+        
+        # 내용 검색: 노드의 content 필드에서
+        content_keyword = self.filter_settings.get("content_keyword", "")
+        if content_keyword:
+            has_matching_content = False
+            for node in milestone.get("nodes", []):
+                node_content = node.get("content", "").lower()
+                if content_keyword.lower() in node_content:
+                    has_matching_content = True
+                    break
+            if not has_matching_content:
                 return False
         
         # 모양 필터
