@@ -35,12 +35,12 @@ class MainWindow(QMainWindow):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #007AFF, stop:1 #0051D5);
                 border: none;
-                border-radius: 6px;
+                border-radius: 5px;
                 color: white;
-                padding: 8px 16px;
-                font-size: 13px;
+                padding: 6px 12px;
+                font-size: 11px;
                 font-weight: bold;
-                min-height: 10px;
+                min-height: 8px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -96,16 +96,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(10)
         
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
             color: #1d1d1f;
-            margin-bottom: 5px;
-            padding: 5px;
+            margin-bottom: 3px;
+            padding: 3px;
         """)
         main_layout.addWidget(title_label)
         
@@ -113,16 +113,16 @@ class MainWindow(QMainWindow):
         self.data_status_label = QLabel("⚠️ 데이터 없음")
         self.data_status_label.setStyleSheet("""
             color: #FF9500;
-            font-size: 12px;
-            padding: 4px 8px;
+            font-size: 10px;
+            padding: 3px 6px;
             background: #FFF3E0;
-            border-radius: 4px;
-            margin-bottom: 8px;
+            border-radius: 3px;
+            margin-bottom: 5px;
         """)
         main_layout.addWidget(self.data_status_label)
         
         toolbar = QHBoxLayout()
-        toolbar.setSpacing(10)
+        toolbar.setSpacing(8)
         
         load_btn = QPushButton("📂 Data Load (Ctrl+L)")
         load_btn.clicked.connect(self.load_data)
@@ -652,8 +652,8 @@ class MainWindow(QMainWindow):
         """)
         
         block_layout = QVBoxLayout(block)
-        block_layout.setContentsMargins(15, 15, 15, 15)
-        block_layout.setSpacing(10)
+        block_layout.setContentsMargins(12, 12, 12, 12)
+        block_layout.setSpacing(8)
         
         header = QHBoxLayout()
         
@@ -678,11 +678,11 @@ class MainWindow(QMainWindow):
         header.addWidget(checkbox)
         
         title_layout = QVBoxLayout()
-        title_layout.setSpacing(5)
+        title_layout.setSpacing(3)
         
         title = QLabel(milestone.get("title", ""))
         title.setStyleSheet("""
-            font-size: 18px;
+            font-size: 15px;
             font-weight: bold;
             color: #1d1d1f;
         """)
@@ -690,7 +690,7 @@ class MainWindow(QMainWindow):
         
         subtitle = QLabel(milestone.get("subtitle", ""))
         subtitle.setStyleSheet("""
-            font-size: 12px;
+            font-size: 10px;
             color: #86868b;
         """)
         title_layout.addWidget(subtitle)
@@ -698,7 +698,7 @@ class MainWindow(QMainWindow):
         header.addLayout(title_layout, 1)
         
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(10)
+        btn_layout.setSpacing(6)
         
         # 마일스톤 수정 버튼
         edit_milestone_btn = QPushButton("✏️ 제목 수정")

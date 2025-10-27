@@ -28,18 +28,18 @@ class MemoDialog(QDialog):
             QTextEdit {
                 background: #f5f5f7;
                 border: 1px solid #d2d2d7;
-                border-radius: 8px;
-                padding: 12px;
+                border-radius: 6px;
+                padding: 10px;
                 color: #1d1d1f;
-                font-size: 14px;
+                font-size: 12px;
             }
             QPushButton {
                 background: #007AFF;
                 color: white;
                 border: none;
-                border-radius: 8px;
-                padding: 10px 20px;
-                font-size: 14px;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -473,27 +473,27 @@ class TimelineCanvas(QWidget):
         if y < timeline_y:  # 노드가 위에 있을 때
             date_text = self.scene.addText(date)
             date_text.setDefaultTextColor(QColor("#86868b"))
-            date_text.setFont(QFont("Apple SD Gothic Neo", 10))
+            date_text.setFont(QFont("Apple SD Gothic Neo", 9))
             date_bounds = date_text.boundingRect()
-            date_text.setPos(x - date_bounds.width() / 2, y - 35)
+            date_text.setPos(x - date_bounds.width() / 2, y - 30)
             
             content_text = self.scene.addText(content)
             content_text.setDefaultTextColor(QColor("#1d1d1f"))
-            content_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+            content_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
             content_bounds = content_text.boundingRect()
-            content_text.setPos(x - content_bounds.width() / 2, y - 50)
+            content_text.setPos(x - content_bounds.width() / 2, y - 43)
         else:  # 노드가 아래에 있을 때
             date_text = self.scene.addText(date)
             date_text.setDefaultTextColor(QColor("#86868b"))
-            date_text.setFont(QFont("Apple SD Gothic Neo", 10))
+            date_text.setFont(QFont("Apple SD Gothic Neo", 9))
             date_bounds = date_text.boundingRect()
-            date_text.setPos(x - date_bounds.width() / 2, y + 20)
+            date_text.setPos(x - date_bounds.width() / 2, y + 18)
             
             content_text = self.scene.addText(content)
             content_text.setDefaultTextColor(QColor("#1d1d1f"))
-            content_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+            content_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
             content_bounds = content_text.boundingRect()
-            content_text.setPos(x - content_bounds.width() / 2, y + 35)
+            content_text.setPos(x - content_bounds.width() / 2, y + 30)
         
         # 이모지 위치 계산
         emoji_x = x + 15
@@ -506,12 +506,12 @@ class TimelineCanvas(QWidget):
                 QPushButton {
                     background: transparent;
                     border: none;
-                    font-size: 16px;
+                    font-size: 14px;
                     padding: 0px;
                 }
                 QPushButton:hover {
                     background: rgba(0, 122, 255, 0.1);
-                    border-radius: 4px;
+                    border-radius: 3px;
                 }
             """)
             attach_btn.setToolTip(f"파일: {attachment}")
@@ -529,12 +529,12 @@ class TimelineCanvas(QWidget):
                 QPushButton {
                     background: transparent;
                     border: none;
-                    font-size: 16px;
+                    font-size: 14px;
                     padding: 0px;
                 }
                 QPushButton:hover {
                     background: rgba(0, 122, 255, 0.1);
-                    border-radius: 4px;
+                    border-radius: 3px;
                 }
             """)
             memo_btn.setToolTip("메모 보기")
