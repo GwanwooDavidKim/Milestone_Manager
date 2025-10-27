@@ -349,17 +349,22 @@ class SearchFilterDialog(ModernDialog):
     
     def __init__(self, parent=None):
         super().__init__(parent, "검색 및 필터")
-        self.setFixedSize(450, 280)
+        self.setFixedSize(450, 360)
         self.result = None
         
         layout = QVBoxLayout()
         layout.setSpacing(15)
         layout.setContentsMargins(30, 30, 30, 30)
         
-        layout.addWidget(QLabel("키워드 검색"))
+        layout.addWidget(QLabel("제목, 부제목 검색"))
         self.keyword_input = QLineEdit()
         self.keyword_input.setPlaceholderText("제목, 부제목에서 검색")
         layout.addWidget(self.keyword_input)
+        
+        layout.addWidget(QLabel("내용 검색"))
+        self.content_input = QLineEdit()
+        self.content_input.setPlaceholderText("노드 내용에서 검색")
+        layout.addWidget(self.content_input)
         
         layout.addWidget(QLabel("모양 필터"))
         self.shape_combo = QComboBox()
@@ -387,6 +392,7 @@ class SearchFilterDialog(ModernDialog):
     def _on_apply(self):
         self.result = {
             "keyword": self.keyword_input.text().strip(),
+            "content_keyword": self.content_input.text().strip(),
             "shape": None if self.shape_combo.currentText() == "전체" else self.shape_combo.currentText()
         }
         self.accept()
