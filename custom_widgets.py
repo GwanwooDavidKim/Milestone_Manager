@@ -499,9 +499,10 @@ class ZoomableTimelineDialog(ModernDialog):
         
         layout.addLayout(control_layout)
         
-        # 타임라인 캔버스 생성 (큰 사이즈)
+        # 타임라인 캔버스 생성 (큰 사이즈, 높이는 동적)
         canvas = TimelineCanvas(self, milestone_data, None)
-        canvas.setFixedSize(2400, 600)  # 큰 사이즈로 생성
+        canvas.setFixedWidth(2400)
+        # 높이는 draw_timeline()에서 자동으로 계산됨
         canvas.draw_timeline()
         
         # ZoomableTimelineView로 표시

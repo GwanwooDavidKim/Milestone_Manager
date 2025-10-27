@@ -195,35 +195,91 @@ class TimelineCanvas(QWidget):
         node_positions = self._calculate_node_positions(sorted_nodes, years, year_spacing, 
                                                          start_x, timeline_y)
         
-        # 동적 높이 계산 - 모든 노드가 보이도록
+        # 노드 위치 기반 동적 높이 및 마진 계산
         if node_positions:
             min_y = min(y for _, _, y in node_positions)
             max_y = max(y for _, _, y in node_positions)
-            required_height = max(600, max_y - min_y + 300)  # 최소 600, 여유 300
-        else:
-            required_height = 600
-        
-        # 이번달 점선 높이 업데이트
-        if current_year in years:
-            year_idx = years.index(current_year)
-            year_x = start_x + (year_idx * year_spacing)
-            month_offset = (current_month - 1) * (year_spacing / 12)
-            current_x = year_x + month_offset
             
-            # 빨간 점선 그리기 (동적 높이에 맞춰)
-            pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
-            current_line = self.scene.addLine(current_x, 20, current_x, required_height - 20)
-            current_line.setPen(pen)
+            # 상단 마진: timeline_y보다 위에 있는 노드들을 위한 공간
+            top_margin = max(80, timeline_y - min_y + 60)
+            # 하단 마진: timeline_y보다 아래에 있는 노드들을 위한 공간
+            bottom_margin = max(80, max_y - timeline_y + 60)
+            
+            # timeline_y를 재조정하여 상단 마진 확보
+            adjusted_timeline_y = top_margin
+            
+            # 전체 높이 = 상단마진 + (max_y - min_y) + 하단마진
+            content_height = max_y - min_y
+            required_height = top_margin + content_height + bottom_margin
+            
+            # 최소 높이 보장
+            required_height = max(500, required_height)
+            
+            # 노드 위치를 조정된 timeline_y에 맞춰 재계산
+            y_adjustment = adjusted_timeline_y - timeline_y
+            adjusted_positions = [(node, x, y + y_adjustment) for node, x, y in node_positions]
+        else:
+            required_height = 500
+            adjusted_timeline_y = 250
+            adjusted_positions = []
+        
+        # 타임라인 막대를 조정된 위치에 다시 그리기
+        if node_positions:
+            # 기존 타임라인 막대 제거하고 다시 그리기
+            self.scene.clear()
+            
+            # 타임라인 막대 (다크 블루그레이)
+            gradient_rect = self.scene.addRect(
+                start_x - 5, adjusted_timeline_y - 3,
+                timeline_width + 10, 6
+            )
+            gradient_rect.setPen(QPen(Qt.PenStyle.NoPen))
+            gradient_rect.setBrush(QBrush(QColor("#2C3E50")))
+            
+            # 각 연도에 대해 분기별 눈금 다시 그리기
+            for i, year in enumerate(years):
+                year_x = start_x + (i * year_spacing)
+                
+                for quarter in [1, 2, 3, 4]:
+                    quarter_offset = (quarter - 1) * (year_spacing / 4)
+                    x_pos = year_x + quarter_offset
+                    
+                    tick_line = self.scene.addLine(x_pos, adjusted_timeline_y - 20, x_pos, adjusted_timeline_y + 20)
+                    tick_line.setPen(QPen(QColor("#86868b"), 2))
+                    
+                    quarter_text = self.scene.addText(f"{year:02d}.Q{quarter}")
+                    quarter_text.setDefaultTextColor(QColor("#1d1d1f"))
+                    quarter_text.setFont(QFont("Apple SD Gothic Neo", 11, QFont.Weight.Bold))
+                    quarter_text.setPos(x_pos - 25, adjusted_timeline_y - 45)
+                
+                for month in range(1, 13):
+                    if month not in [3, 6, 9, 12]:
+                        month_offset = (month - 1) * (year_spacing / 12)
+                        x_pos = year_x + month_offset
+                        tick_line = self.scene.addLine(x_pos, adjusted_timeline_y - 10, x_pos, adjusted_timeline_y + 10)
+                        tick_line.setPen(QPen(QColor("#d2d2d7"), 1))
+            
+            # "이번달" 텍스트와 점선
+            if current_year in years:
+                year_idx = years.index(current_year)
+                year_x = start_x + (year_idx * year_spacing)
+                month_offset = (current_month - 1) * (year_spacing / 12)
+                current_x = year_x + month_offset
+                
+                month_text = self.scene.addText("이번달")
+                month_text.setDefaultTextColor(QColor("#FF3B30"))
+                month_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
+                month_text.setPos(current_x + 5, 25)
+                
+                pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
+                current_line = self.scene.addLine(current_x, 20, current_x, required_height - 20)
+                current_line.setPen(pen)
         
         # Scene 크기 설정
         self.scene.setSceneRect(0, 0, width + 100, required_height)
         
-        # Widget 높이도 동적으로 설정하여 스크롤 제거
-        self.setMinimumHeight(int(required_height))
-        self.setMaximumHeight(int(required_height))
-        
-        for node_data, x, y in node_positions:
-            self._draw_node(node_data, x, y, timeline_y)
+        for node_data, x, y in adjusted_positions:
+            self._draw_node(node_data, x, y, adjusted_timeline_y)
     
     def _parse_date(self, date_str: str) -> int:
         """날짜 문자열을 숫자로 변환"""
