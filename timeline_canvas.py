@@ -185,9 +185,9 @@ class TimelineCanvas(QWidget):
             month_offset = (current_month - 1) * (year_spacing / 12)
             current_x = year_x + month_offset
             
-            # 빨간 점선 그리기 (Block 전체 높이)
+            # 빨간 점선 그리기 (Block 전체 높이 - 충분히 길게)
             pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
-            current_line = self.scene.addLine(current_x, 20, current_x, height - 20)
+            current_line = self.scene.addLine(current_x, 20, current_x, height + 200)
             current_line.setPen(pen)
             
             # "이번달" 표시 (점선 오른쪽 위)
@@ -259,13 +259,14 @@ class TimelineCanvas(QWidget):
             
             # 3단계: 같은 날짜 그룹 내 노드들 배치
             for group_idx, node in enumerate(group_nodes):
-                # x좌표 분산: 0, +20, -20, +40, -40, +60, -60...
+                # x좌표 분산: 0, +50, -50, +100, -100, +150, -150...
+                # 겹침 방지를 위해 간격을 크게 설정
                 if group_idx == 0:
                     x_offset = 0
                 elif group_idx % 2 == 1:
-                    x_offset = (group_idx // 2 + 1) * 20
+                    x_offset = (group_idx // 2 + 1) * 50
                 else:
-                    x_offset = -(group_idx // 2) * 20
+                    x_offset = -(group_idx // 2) * 50
                 
                 x_pos = base_x + x_offset
                 
