@@ -344,6 +344,64 @@ class NodeDialog(ModernDialog):
         self.accept()
 
 
+class DateFilterDialog(ModernDialog):
+    """날짜 필터 다이얼로그"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent, "날짜 필터")
+        self.setFixedSize(400, 250)
+        self.result = None
+        
+        from datetime import datetime
+        current_year = datetime.now().year
+        
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
+        
+        layout.addWidget(QLabel("년도 선택"))
+        self.year_combo = QComboBox()
+        # 현재 ±20년
+        years = [str(year) for year in range(current_year - 20, current_year + 21)]
+        self.year_combo.addItems(years)
+        # 현재 년도를 기본값으로
+        self.year_combo.setCurrentText(str(current_year))
+        layout.addWidget(self.year_combo)
+        
+        layout.addWidget(QLabel("분기 선택"))
+        self.quarter_combo = QComboBox()
+        self.quarter_combo.addItems(["Q1 (1~3월)", "Q2 (4~6월)", "Q3 (7~9월)", "Q4 (10~12월)"])
+        layout.addWidget(self.quarter_combo)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        cancel_btn = QPushButton("취소")
+        cancel_btn.setObjectName("secondary")
+        cancel_btn.setFixedWidth(100)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        
+        apply_btn = QPushButton("검색")
+        apply_btn.setFixedWidth(100)
+        apply_btn.setDefault(True)
+        apply_btn.clicked.connect(self._on_apply)
+        btn_layout.addWidget(apply_btn)
+        
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
+    
+    def _on_apply(self):
+        quarter_text = self.quarter_combo.currentText()
+        quarter = int(quarter_text.split()[0][1])  # "Q1 (1~3월)" -> 1
+        
+        self.result = {
+            "year": int(self.year_combo.currentText()),
+            "quarter": quarter
+        }
+        self.accept()
+
+
 class SearchFilterDialog(ModernDialog):
     """검색 및 필터 다이얼로그"""
     

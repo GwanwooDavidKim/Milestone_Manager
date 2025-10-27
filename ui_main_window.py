@@ -8,7 +8,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QPainter
 from typing import List, Dict, Set, Optional
 
 from data_manager import DataManager
-from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog
+from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog, DateFilterDialog
 from timeline_canvas import TimelineCanvas
 
 
@@ -145,6 +145,11 @@ class MainWindow(QMainWindow):
         search_btn.setObjectName("secondary")
         search_btn.clicked.connect(self.open_search_filter)
         toolbar.addWidget(search_btn)
+        
+        date_filter_btn = QPushButton("🗓️ 날짜 필터")
+        date_filter_btn.setObjectName("secondary")
+        date_filter_btn.clicked.connect(self.filter_by_date)
+        toolbar.addWidget(date_filter_btn)
         
         this_month_btn = QPushButton("📌 이번달 일정")
         this_month_btn.setObjectName("secondary")
@@ -333,6 +338,31 @@ class MainWindow(QMainWindow):
             self._update_filter_status()
             self._refresh_ui()
     
+    def filter_by_date(self):
+        """날짜 필터 다이얼로그"""
+        dialog = DateFilterDialog(self)
+        if dialog.exec() and dialog.result:
+            year = dialog.result["year"]
+            quarter = dialog.result["quarter"]
+            
+            # 분기별 월 매칭
+            # Q1 = 1,2,3월 / Q2 = 4,5,6월 / Q3 = 7,8,9월 / Q4 = 10,11,12월
+            quarter_months = {
+                1: [1, 2, 3],
+                2: [4, 5, 6],
+                3: [7, 8, 9],
+                4: [10, 11, 12]
+            }
+            
+            self.filter_settings = {
+                "date_filter": True,
+                "filter_year": year % 100,  # 2025 -> 25
+                "filter_quarter": quarter,
+                "filter_months": quarter_months[quarter]
+            }
+            self._update_filter_status()
+            self._refresh_ui()
+    
     def filter_this_month(self):
         """이번달 일정 필터"""
         from datetime import datetime
@@ -362,10 +392,15 @@ class MainWindow(QMainWindow):
             content_keyword = self.filter_settings.get("content_keyword", "")
             shape = self.filter_settings.get("shape", "")
             this_month = self.filter_settings.get("this_month", False)
+            date_filter = self.filter_settings.get("date_filter", False)
             
             if this_month:
                 current_month = self.filter_settings.get("current_month", 0)
                 status_parts.append(f"📌 이번달 일정 ({current_month}월)")
+            if date_filter:
+                year = self.filter_settings.get("filter_year", 0)
+                quarter = self.filter_settings.get("filter_quarter", 0)
+                status_parts.append(f"🗓️ {year}년 Q{quarter}")
             if keyword:
                 status_parts.append(f"제목/부제목: '{keyword}'")
             if content_keyword:
@@ -523,6 +558,56 @@ class MainWindow(QMainWindow):
                             pass
             
             if not has_this_month_node:
+                return False
+        
+        # 날짜 필터 (년도 + 분기)
+        date_filter = self.filter_settings.get("date_filter", False)
+        if date_filter:
+            filter_year = self.filter_settings.get("filter_year", 0)
+            filter_months = self.filter_settings.get("filter_months", [])
+            
+            # 노드 중에 해당 년도의 해당 분기 월에 해당하는 노드가 있는지 확인
+            has_matching_date_node = False
+            for node in milestone.get("nodes", []):
+                date_str = node.get("date", "").strip().upper()
+                
+                # 날짜 파싱
+                if "Q" in date_str:
+                    # 24.Q3 형식
+                    parts = date_str.split("Q")
+                    if len(parts) == 2:
+                        try:
+                            year = int(parts[0].replace(".", "").strip())
+                            quarter = int(parts[1].strip())
+                            # 분기를 월로 변환
+                            quarter_months = {
+                                1: [1, 2, 3],
+                                2: [4, 5, 6],
+                                3: [7, 8, 9],
+                                4: [10, 11, 12]
+                            }
+                            node_months = quarter_months.get(quarter, [])
+                            # 년도가 일치하고, 분기의 월이 겹치는지 확인
+                            if year == filter_year and any(m in filter_months for m in node_months):
+                                has_matching_date_node = True
+                                break
+                        except:
+                            pass
+                else:
+                    # 24.10 형식
+                    parts = date_str.split(".")
+                    if len(parts) == 2:
+                        try:
+                            year = int(parts[0].strip())
+                            month = int(parts[1].strip())
+                            # 년도가 일치하고, 월이 필터 월에 포함되는지 확인
+                            if year == filter_year and month in filter_months:
+                                has_matching_date_node = True
+                                break
+                        except:
+                            pass
+            
+            if not has_matching_date_node:
                 return False
         
         # 키워드 검색: 제목과 부제목에서만
