@@ -600,6 +600,12 @@ class MainWindow(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
         
+        # 마일스톤 수정 버튼
+        edit_milestone_btn = QPushButton("✏️ 제목 수정")
+        edit_milestone_btn.setObjectName("secondary")
+        edit_milestone_btn.clicked.connect(lambda: self._edit_milestone(milestone["id"]))
+        btn_layout.addWidget(edit_milestone_btn)
+        
         add_btn = QPushButton("➕ Node 추가")
         add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
         btn_layout.addWidget(add_btn)
@@ -635,6 +641,29 @@ class MainWindow(QMainWindow):
             self.selected_milestone_ids.add(milestone_id)
         else:
             self.selected_milestone_ids.discard(milestone_id)
+    
+    def _edit_milestone(self, milestone_id: str):
+        """마일스톤 수정"""
+        # 마일스톤 찾기
+        milestone = None
+        for m in self.data_manager.get_milestones():
+            if m["id"] == milestone_id:
+                milestone = m
+                break
+        
+        if not milestone:
+            self._show_message(QMessageBox.Icon.Warning, "경고", "마일스톤을 찾을 수 없습니다.")
+            return
+        
+        # 다이얼로그 열기
+        dialog = MilestoneDialog(self, milestone_data=milestone)
+        if dialog.exec() and dialog.result:
+            self.data_manager.update_milestone(
+                milestone_id,
+                dialog.result["title"],
+                dialog.result["subtitle"]
+            )
+            self._refresh_ui()
     
     def _add_node_to_milestone(self, milestone_id: str):
         """노드 추가"""
