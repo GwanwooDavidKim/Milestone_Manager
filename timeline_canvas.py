@@ -231,42 +231,66 @@ class TimelineCanvas(QWidget):
     def _calculate_node_positions(self, nodes: List[Dict], years: List[int], 
                                    year_spacing: float, start_x: float, 
                                    timeline_y: float) -> List[Tuple]:
-        """노드 위치 계산 - 연도 기반"""
+        """노드 위치 계산 - 같은 날짜 노드 겹침 방지"""
         layout = []
         occupied_positions = []
         
-        for i, node in enumerate(nodes):
+        # 1단계: 노드를 date_val로 그룹화
+        from collections import defaultdict
+        date_groups = defaultdict(list)
+        for node in nodes:
             date = node.get("date", "")
             date_val = self._parse_date(date)
+            date_groups[date_val].append(node)
+        
+        # 2단계: 각 날짜 그룹별로 처리
+        for date_val, group_nodes in date_groups.items():
             year = date_val // 100
             month = date_val % 100
             
-            # 연도 인덱스 찾기
+            # 기본 x 좌표 계산
             if year in years:
                 year_idx = years.index(year)
                 year_x = start_x + (year_idx * year_spacing)
                 month_offset = (month - 1) * (year_spacing / 12)
-                x_pos = year_x + month_offset
+                base_x = year_x + month_offset
             else:
-                x_pos = start_x
+                base_x = start_x
             
-            # 마일스톤 근처에 배치 (날짜 기반으로 위/아래 결정 - 삭제 시에도 일관성 유지)
-            y_offset = 0
-            alternating = date_val % 2  # 인덱스 대신 날짜값 기준으로 위/아래 결정
-            base_distance = 50
-            
-            # 겹침 체크 (텍스트 길이 고려하여 더 넓게)
-            for occupied_x, occupied_y in occupied_positions:
-                if abs(occupied_x - x_pos) < 200:  # 80 -> 200으로 확장 (텍스트 길이 고려)
-                    y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 40)
-            
-            if alternating == 0:
-                y_pos = timeline_y - base_distance - y_offset
-            else:
-                y_pos = timeline_y + base_distance + y_offset
-            
-            layout.append((node, x_pos, y_pos))
-            occupied_positions.append((x_pos, y_pos))
+            # 3단계: 같은 날짜 그룹 내 노드들 배치
+            for group_idx, node in enumerate(group_nodes):
+                # x좌표 분산: 0, +20, -20, +40, -40, +60, -60...
+                if group_idx == 0:
+                    x_offset = 0
+                elif group_idx % 2 == 1:
+                    x_offset = (group_idx // 2 + 1) * 20
+                else:
+                    x_offset = -(group_idx // 2) * 20
+                
+                x_pos = base_x + x_offset
+                
+                # 같은 날짜 그룹 내에서 위-아래 교대 배치
+                # 기본 방향은 date_val % 2로 결정하되, 그룹 내에서 교대
+                base_alternating = date_val % 2
+                if group_idx % 2 == 1:
+                    alternating = 1 - base_alternating  # 반대 방향
+                else:
+                    alternating = base_alternating  # 같은 방향
+                
+                # 겹침 체크
+                y_offset = 0
+                base_distance = 50
+                for occupied_x, occupied_y in occupied_positions:
+                    if abs(occupied_x - x_pos) < 200:
+                        y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 40)
+                
+                if alternating == 0:
+                    y_pos = timeline_y - base_distance - y_offset
+                else:
+                    y_pos = timeline_y + base_distance + y_offset
+                
+                layout.append((node, x_pos, y_pos))
+                occupied_positions.append((x_pos, y_pos))
         
         return layout
     
