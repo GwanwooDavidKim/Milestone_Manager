@@ -1,272 +1,51 @@
 # Milestone Manager
 
-## 프로젝트 개요
+## Overview
+Milestone Manager is a desktop application designed to visualize timeline-based milestones and events. Built with PyQt6, it offers a modern, Apple-style intuitive user interface. All project data is stored locally in JSON files, ensuring data ownership and transparency. The application aims to provide a clear, concise, and interactive way to manage and track project timelines, making it suitable for reporting and presentations.
 
-**Milestone Manager**는 타임라인 기반의 마일스톤과 이벤트를 시각화하는 데스크톱 애플리케이션입니다. PyQt6를 사용하여 애플 스타일의 현대적이고 직관적인 UI를 제공하며, 모든 데이터는 로컬 JSON 파일에 저장됩니다.
+## User Preferences
+- **Design**: Light mode preferred (dark mode not preferred).
+- All code should use Korean comments and docstrings.
+- Adhere to PEP 8 style guide.
+- Use clear variable and function names.
+- Code structure should be modularized.
+- Apple-style modern UI/UX is preferred.
 
-## 최근 변경사항
+## System Architecture
+The application is structured into several Python modules:
+- `main.py`: Entry point for the application, handling login and license management.
+- `data_manager.py`: Manages data persistence to and from `raw.json`.
+- `ui_main_window.py`: Defines the main application window and its components.
+- `timeline_canvas.py`: Handles the visual rendering and interaction of the timeline.
+- `custom_widgets.py`: Contains custom PyQt widgets for specific UI elements.
 
-- **2025-10-27**: 검색 필터 기능 강화 및 날짜 필터 추가 ✅
-  - **내용 검색 필드 추가** ⭐:
-    - 검색/필터 다이얼로그에 "내용에서 검색" 입력 필드 추가
-    - 제목/부제목 검색과 노드 내용 검색을 분리하여 더 정확한 검색 가능
-    - 각각 독립적으로 또는 함께 사용 가능
-  - **날짜 필터 기능 추가** ⭐:
-    - "🗓️ 날짜 필터" 버튼 추가 (검색/필터 버튼 옆에 배치)
-    - 년도 선택: 현재 년도 ±10년 (드롭다운)
-    - 분기 선택: Q1(1~3월), Q2(4~6월), Q3(7~9월), Q4(10~12월)
-    - 선택한 년도와 분기에 해당하는 노드가 있는 마일스톤만 표시
-    - 24.10 형식과 24.Q3 형식 모두 정확히 필터링
-    - 필터 상태에 "🗓️ 25년 Q4" 형식으로 표시
-  - **노드 배치 로직 개선** ⭐:
-    - 인덱스 기반 → 날짜 기반 위/아래 배치로 변경
-    - 노드 삭제 후에도 나머지 노드들의 위치가 일관되게 유지
-    - 겹침 체크 범위 확장 (80 → 200) - 텍스트 길이 고려
-    - 노드 내용 텍스트 겹침 방지 강화
-  - **같은 날짜 노드 겹침 방지** ⭐:
-    - 같은 날짜(24.07)에 여러 노드 추가 시 자동으로 분산 배치
-    - x좌표 분산: 0, +20, -20, +40, -40 픽셀씩 좌우로 분산
-    - 같은 날짜 그룹 내에서 위-아래 교대 배치
-    - 서로 다른 날짜 노드는 date_val % 2로 일관성 유지
+### UI/UX Decisions
+- **Design Theme**: Predominantly light theme, inspired by Apple's aesthetic, featuring white backgrounds and clean outlines.
+- **Color Palette**:
+    - Primary Blue: `#007AFF`
+    - Background: `#f5f5f7`, `#ffffff`
+    - Text: `#1d1d1f`
+    - Secondary: `#86868b`
+    - Border: `#d2d2d7`, `#e8e8ed`
+- **Typography**: Apple SD Gothic Neo font for a sleek, modern look.
+- **Interactivity**: Smooth interactions with hover effects and clear feedback for selected states and buttons.
+- **Responsiveness**: UI elements scaled for optimal viewing on 1920x1080 resolution, with adjustable padding and margins.
 
-- **2025-10-24**: 타임라인 표시 개선 및 이번달 기능 강화 ✅
-  - **마일스톤 제목 수정 기능 추가** ⭐:
-    - 각 마일스톤 블록에 "✏️ 제목 수정" 버튼 추가
-    - 제목과 부제목을 쉽게 수정할 수 있는 기능
-  - **이번달 표시 개선** ⭐:
-    - "오늘" → "이번달"로 변경 (이모티콘 제거)
-    - 빨간 점선을 Block 전체 높이로 확장
-    - "이번달" 텍스트를 점선 오른쪽 위에 배치
-  - **타임라인 년도 표시 개선** ⭐:
-    - 현재 년도(2025년)를 항상 기본으로 표시
-    - 노드 년도와 현재 년도 사이의 빈 년도 자동으로 채우기
-    - 예: 23.Q3 노드만 있으면 23년, 24년, 25년 모두 표시
-    - 새 블록 생성 시에도 25년 타임라인 자동 표시
-  - **검색 텍스트 정확성 개선**: "제목, 부제목에서 검색"으로 정확한 설명
+### Technical Implementations
+- **Timeline Visualization**: Features quarterly (e.g., 24.Q1) and monthly scales, dynamic year expansion to include current and intermediate years, and "This Month" indicator.
+- **Node Management**: Nodes (events) can be customized by shape, color, date (YY.MM or YY.Qn format with validation), content, memo (tooltip on hover), and attached files. Selection is via checkboxes, allowing one node at a time for modification or deletion.
+- **Data Persistence**: All data is stored in `raw.json`. Automatic loading on startup, real-time status display, warning for empty saves, and automatic backups (`raw.json.backup`) are implemented for data safety.
+- **Search and Filter**: Capabilities include keyword search across milestone titles/subtitles, content search within nodes, shape-based filtering, and date-based filtering by year and quarter. A "This Month" filter is also available.
+- **Image Export**: Individual milestone blocks can be exported as PNG/JPG images, automatically saved to a `Milestone_IMG` folder.
+- **Zoom and Pan** (Updated 2025-10-27): The timeline view supports smooth zooming and panning using mouse wheel (Ctrl+wheel for fine adjustment) and drag functionalities. A new "🔍 확대 보기" button on each milestone block opens a ZoomableTimelineDialog (1200x700) with ➕/➖ zoom buttons, ⊡ fit-to-view button, and interactive zoom/pan controls for detailed timeline inspection.
+- **Node Layout**: Improved node placement logic prevents overlapping, distributing nodes with the same date for better readability.
 
-- **2025-10-17**: 데이터 안전성 강화 및 이번달 일정 관리 기능 ✅
-  - **자동 데이터 로드**: 프로그램 시작 시 raw.json 자동 로드 ⭐
-  - **데이터 상태 표시**: 상단에 "✅ 데이터 로드됨" / "⚠️ 데이터 없음" 표시 ⭐
-  - **빈 데이터 저장 경고**: 마일스톤 0개 상태에서 저장 시 경고 메시지 ⭐
-  - **자동 백업 생성**: 저장할 때마다 raw.json.backup 자동 생성 ⭐
-  - **현재 시점 표시**: 타임라인에 이번달 기준 빨간 점선 표시 ⭐
-  - **이번달 일정 필터**: "📌 이번달 일정" 버튼으로 이번 달 노드가 있는 마일스톤만 표시 ⭐
+### Feature Specifications
+- **Login and License**: Hardcoded credentials (`MCI / mci2025!`) and a license expiration date (2025-12-31) with warning notifications.
+- **Milestone Block Management**: Supports creation, deletion, and inline editing of milestone titles and subtitles.
+- **Keyboard Shortcuts**: Streamlined shortcuts for data loading (Ctrl+L), node addition (Ctrl+N), editing (Ctrl+E), and deletion (Ctrl+D).
 
-- **2025-10-17**: UI/UX 개선 및 사용성 향상 ✅
-  - **단축키 추가/단순화**:
-    - Data Load: Ctrl+L 추가 ⭐
-    - Node 추가/수정 단축키 제거, 삭제(Ctrl+D)만 남김
-  - **타임라인 막대 색상 변경**: 다크 블루그레이(#2C3E50) ⭐
-  - **버튼 크기 축소**: 세로 크기 줄이고 padding 조정 (깔끔한 UI)
-  - **엔터키로 확인**: 모든 다이얼로그에서 엔터키로 확인 버튼 클릭 가능
-  - **이미지 내보내기 개선** ⭐:
-    - 각 마일스톤 블록별로 분리 저장
-    - Milestone_IMG 폴더에 자동 저장
-    - filename_1.png, filename_2.png 형식으로 자동 저장
-    - 저장된 파일 목록 표시
-  - **전체 UI 크기 축소** ⭐:
-    - 버튼, 글자, 블록 크기 80% 수준으로 축소
-    - 1920x1080 해상도에 최적화
-    - 간격과 여백 조정으로 깔끔한 레이아웃
-
-- **2025-10-17**: 마일스톤 블록별 독립적인 노드 선택 및 단축키 개선 ✅
-  - **마일스톤 생성 다이얼로그 간격 조정**: 부제목 입력창과 버튼 간격 증가 (겹침 해결)
-  - **메모/첨부파일 이모티콘 수정** ⭐:
-    - QPushButton으로 변경하여 클릭 이벤트 확실히 작동
-    - 📎 클릭 시 첨부파일 열기
-    - 📝 클릭 시 메모 다이얼로그 표시
-  - **마일스톤 블록별 독립적인 노드 선택** ⭐:
-    - 각 마일스톤 블록이 자신의 선택된 노드를 독립적으로 관리
-    - 마일스톤 1에서 노드 선택 후 마일스톤 2에서 노드 선택해도 각각 독립적
-    - Node 수정/삭제 버튼이 해당 마일스톤의 선택된 노드만 처리
-  - **단축키 로직 개선** ⭐:
-    - Ctrl+N: 노드가 선택된 마일스톤에 추가 (선택 없으면 첫 번째 마일스톤)
-    - Ctrl+E: 선택된 노드 수정
-    - Ctrl+D: 선택된 노드 삭제
-
-- **2025-10-17**: 모든 UI 이슈 해결 및 기능 개선 완료 ✅
-  - **로그인창 제목 수정**: "Milestone Manager" 제목이 제대로 보이도록 수정 (minHeight 설정)
-  - **체크박스와 노드 간격 조정**: 체크박스 크기 축소 및 간격 증가 (겹침 해결)
-  - **검색/필터 기능 개선** ⭐:
-    - 제목과 부제목에서만 검색 (노드 내용 제외)
-    - 필터 적용 상태 표시 (파란색 배지)
-    - 필터 해제 버튼 추가
-  - **타임라인 빈 연도 표시** ⭐:
-    - 24년, 25년, 27년 데이터가 있으면 26년도 눈금선 표시
-    - 최소~최대 연도 사이의 모든 연도 표시
-  - **메모 툴팁 기능 구현** ⭐:
-    - 노드에 마우스 오버 시 메모 내용 표시
-    - 메모가 없으면 내용 표시
-  - **마일스톤 다이얼로그 간격 증가**:
-    - 제목과 부제목 입력창 사이 간격 증가 (구분 명확)
-
-- **2025-10-17**: UI 텍스트 짤림 해결 및 타임라인 개선
-  - 로그인창 "Milestone Manager" 제목 글씨 짤림 수정 (padding 증가)
-  - 다이얼로그 입력창 placeholder 글씨 짤림 수정 (padding 조정)
-  - **타임라인 연도별 균등 배치** ⭐:
-    - 데이터에 있는 연도(24년, 25년 등)를 추출
-    - 각 연도를 타임라인에 균등한 간격으로 배치
-    - 각 연도 내에서 분기(Q1-Q4)와 월(1-12)을 균등 배치
-  - **노드 선택 방식 변경** ⭐:
-    - 노드 클릭 방식 → 체크박스 방식으로 변경
-    - 노드 왼쪽에 체크박스 추가
-    - 한 번에 하나의 노드만 선택 가능
-    - 선택된 노드만 수정/삭제 가능
-
-- **2025-10-17**: 라이트 모드로 전면 개편 및 UI/UX 대폭 개선
-  - 다크모드 → 라이트모드 변경 (사용자 선호도 반영)
-  - 애플 스타일의 깔끔한 라이트 테마 적용
-  - 타임라인 눈금선 개선:
-    - 분기별 큰 눈금 (24.Q1, 24.Q2 형식으로 표시)
-    - 월별 작은 눈금 (12개월 정확히 표시)
-  - 날짜 입력 양식 검증 추가 (24.10 또는 24.Q2만 허용)
-  - 24.Q1 형식 날짜 파싱 로직 수정
-  - Node 크기 축소 (더 깔끔한 표현)
-  - 메모 툴팁 기능 개선 (마우스 오버 시 정확히 표시)
-  - 버튼 padding 조정 (글자 짤림 해결)
-  - 로그인창 입력칸 높이 증가 (글자 짤림 해결)
-
-- **2025-10-17**: PyQt6로 완전 재작성
-  - CustomTkinter → PyQt6로 전환
-  - 고급스러운 디자인 적용
-
-## 프로젝트 구조
-
-```
-.
-├── main.py                 # 애플리케이션 진입점 (로그인 & 라이선스)
-├── data_manager.py         # raw.json 데이터 관리
-├── ui_main_window.py       # 메인 UI 윈도우
-├── timeline_canvas.py      # 타임라인 시각화 컴포넌트
-├── custom_widgets.py       # 커스텀 다이얼로그 위젯
-├── raw.json               # 데이터 저장 파일 (자동 생성)
-└── .gitignore             # Git 무시 파일
-```
-
-## 주요 기능
-
-### 1. 로그인 및 라이선스 관리
-- **하드코딩된 계정**: MCI / mci2025!
-- **라이선스 만료일**: 2025-12-31
-- 만료일 30일 전부터 경고 메시지 표시
-- 라이트 모드 메시지 박스 (가독성 향상)
-
-### 2. 데이터 안전성 기능 ⭐
-- **자동 로드**: 프로그램 시작 시 raw.json 자동 로드 (없으면 빈 상태)
-- **상태 표시**: 데이터 로드 여부 및 마일스톤 개수 실시간 표시
-- **저장 경고**: 빈 데이터 저장 시 경고 메시지 (실수 방지)
-- **자동 백업**: 저장 시 raw.json.backup 자동 생성 (복구 가능)
-
-### 2. 마일스톤 블록 관리
-- 애플 스타일 라이트 테마 디자인
-- 흰색 배경, 깔끔한 외곽선
-- 제목과 부제목 설정
-- **제목 수정 버튼** ⭐: 마일스톤의 제목과 부제목을 수정할 수 있는 버튼 추가
-- 체크박스를 통한 다중 선택 및 삭제
-
-### 3. 타임라인 시각화 (대폭 개선 ✨)
-- **분기별 큰 눈금**: 24.Q1, 24.Q2, 24.Q3, 24.Q4 형식으로 표시
-- **월별 작은 눈금**: 12개월 정확히 표시
-- **현재 시점 표시** ⭐: 
-  - 이번달 기준 빨간 점선 세로로 표시 (Block 전체 높이)
-  - "이번달" 라벨을 점선 오른쪽 위에 표시
-- **타임라인 년도 자동 확장** ⭐:
-  - 현재 년도(2025년)를 항상 기본으로 표시
-  - 노드 년도와 현재 년도 사이의 빈 년도 자동으로 채우기
-  - 예: 23.Q3 노드만 있으면 23년, 24년, 25년 모두 표시
-- 노드를 타임라인 막대 위/아래에 정확히 배치
-- 자동 겹침 방지 레이아웃
-- 다크 블루그레이 타임라인 막대 (#2C3E50)
-
-### 4. 노드(이벤트) 관리
-- **모양**: 동그라미, 세모, 네모, 별, 마름모
-- **색상**: 컬러 팔레트로 자유 선택
-- **날짜**: YY.MM (예: 24.10) 또는 YY.Qn (예: 24.Q3) 형식
-  - ⚠️ 날짜 입력 양식 자동 검증 (잘못된 형식 입력 시 알림)
-- **내용**: 노드 옆 표시 텍스트
-- **메모**: 마우스 오버 시 툴팁으로 표시 (정확히 작동)
-- **첨부 파일**: 클릭 시 파일 실행
-- **선택 기능**: 노드 왼쪽의 체크박스로 선택 (한 번에 하나만 선택 가능)
-
-### 5. 데이터 영속성
-- `raw.json` 파일에 모든 데이터 저장
-- Ctrl+S 단축키로 빠른 저장
-- JSON 형식으로 투명한 데이터 구조
-
-### 6. 검색 및 필터
-- **키워드 검색** (제목, 부제목): 마일스톤의 제목과 부제목에서 검색
-- **내용 검색** ⭐: 노드의 내용(content) 필드에서 검색 (제목/부제목 검색과 별도)
-- **모양별 필터링**: 특정 모양의 노드가 있는 마일스톤만 표시
-- **날짜 필터** ⭐: 
-  - 년도 선택: 현재 년도 ±10년
-  - 분기 선택: Q1(1~3월), Q2(4~6월), Q3(7~9월), Q4(10~12월)
-  - 선택한 년도와 분기에 해당하는 노드가 있는 마일스톤만 표시
-- **이번달 일정 필터** ⭐: "📌 이번달 일정" 버튼으로 이번 달 노드만 표시
-- **필터 상태 표시**: 파란색 배지로 현재 적용된 필터 확인
-- **필터 해제 버튼**: 모든 필터를 한 번에 해제
-
-### 7. 이미지 내보내기
-- PNG/JPG 형식으로 저장
-- 보고서나 프레젠테이션에 활용
-
-## 기술 스택
-
-- **언어**: Python 3.11
-- **GUI 프레임워크**: PyQt6
-- **이미지 처리**: Pillow (PIL)
-- **데이터 저장**: JSON
-
-## 사용 방법
-
-1. **로그인**: MCI / mci2025! 로 로그인
-2. **Data Load**: 기존 데이터 불러오기 (처음 실행 시 빈 상태)
-3. **Milestone 생성**: 새 마일스톤 블록 추가
-4. **Node 추가**: 타임라인에 이벤트 추가
-   - 날짜는 반드시 **24.10** 또는 **24.Q2** 형식으로 입력
-5. **Node 선택**: 노드 왼쪽 체크박스 클릭하여 선택
-6. **Node 수정/삭제**: 선택 후 버튼 클릭
-7. **Data 저장**: Ctrl+S 또는 버튼으로 저장
-
-## 디자인 원칙
-
-1. **단순함과 직관성**: 설명서 없이 사용 가능한 UI
-2. **시각적 명료성**: 한눈에 파악 가능한 정보 구조
-3. **직접 조작과 즉각적인 피드백**: 부드러운 인터랙션
-4. **데이터 소유권과 안전성**: 로컬 저장, 투명한 데이터 구조
-5. **라이트 모드 우선**: 다양한 사용자 선호도 고려
-
-## UI/UX 특징
-
-- **라이트 테마**: 애플 스타일의 깔끔한 흰색 배경
-- **색상 팔레트**:
-  - Primary Blue: #007AFF
-  - Background: #f5f5f7, #ffffff
-  - Text: #1d1d1f
-  - Secondary: #86868b
-  - Border: #d2d2d7, #e8e8ed
-- **타이포그래피**: Apple SD Gothic Neo 폰트
-- **부드러운 인터랙션**: 호버 시 색상 변화
-- **명확한 피드백**: 선택 상태, 버튼 상태 명확히 표시
-
-## 개발 환경
-
-- Python 가상 환경 자동 관리
-- PyQt6 시스템 의존성 (qt6.qtbase, qt6.qtwayland, libGL 등)
-- VNC를 통한 GUI 표시
-
-## 사용자 선호사항
-
-- **디자인**: 라이트 모드 선호 (다크모드는 선호하지 않음)
-- 모든 코드는 한글 주석 및 독스트링 사용
-- PEP 8 스타일 가이드 준수
-- 명확한 변수명과 함수명 사용
-- 모듈 분리를 통한 코드 구조화
-- 애플 스타일의 현대적인 UI/UX
-
-## 날짜 형식 규칙
-
-노드 추가 시 날짜는 다음 형식만 허용:
-- **YY.MM**: 24.10, 24.01 (2자리 연도.월)
-- **YY.Qn**: 24.Q1, 24.Q2, 24.Q3, 24.Q4 (2자리 연도.분기)
-
-잘못된 형식 입력 시 자동으로 알림 표시
+## External Dependencies
+- **GUI Framework**: PyQt6
+- **Image Processing**: Pillow (PIL)
+- **Data Storage**: JSON (standard Python library)
