@@ -38,7 +38,8 @@ The application is structured into several Python modules:
 - **Search and Filter**: Capabilities include keyword search across milestone titles/subtitles, content search within nodes, shape-based filtering, and date-based filtering by year and quarter. A "This Month" filter is also available.
 - **Image Export**: Individual milestone blocks can be exported as PNG/JPG images, automatically saved to a `Milestone_IMG` folder.
 - **Zoom and Pan** (Updated 2025-10-27): The timeline view supports smooth zooming and panning using mouse wheel (Ctrl+wheel for fine adjustment) and drag functionalities. A new "🔍 확대 보기" button on each milestone block opens a ZoomableTimelineDialog (1200x700) with ➕/➖ zoom buttons, ⊡ fit-to-view button, and interactive zoom/pan controls for detailed timeline inspection.
-- **Node Layout**: Improved node placement logic prevents overlapping, distributing nodes with the same date for better readability.
+- **Node Layout** (Updated 2025-10-27): Month-based fixed height positioning algorithm implemented for predictable and clean node placement. Odd months (1,3,5,7,9,11) are positioned below the timeline at fixed heights (timeline_y + 60/120/180px), while even months (2,4,6,8,10,12) are positioned above (timeline_y - 180/120/60px), repeating every 6 months. Multiple nodes in the same month are distributed horizontally only, eliminating vertical overlap issues.
+- **UI Optimization** (Updated 2025-10-27): Font sizes reduced across the application (title: 18px, buttons: 11px, node text: 10px/9px) and spacing/padding minimized for better screen real estate utilization. Milestone blocks fixed at 250px height in main UI with internal scrolling enabled. Timeline height standardized to 400px with timeline at y=200 position.
 
 ### Feature Specifications
 - **Login and License**: Hardcoded credentials (`MCI / mci2025!`) and a license expiration date (2025-12-31) with warning notifications.
