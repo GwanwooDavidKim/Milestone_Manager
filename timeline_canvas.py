@@ -509,3 +509,72 @@ class TimelineCanvas(QWidget):
         
         path.closeSubpath()
         return path
+
+
+class ZoomableTimelineView(QGraphicsView):
+    """Zoom/Pan 기능이 있는 타임라인 뷰"""
+    
+    def __init__(self, scene, parent=None):
+        super().__init__(scene, parent)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)  # 드래그로 이동
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.current_scale = 1.0
+        
+        self.setStyleSheet("""
+            QGraphicsView {
+                background: #fafafa;
+                border: 1px solid #e8e8ed;
+            }
+        """)
+    
+    def wheelEvent(self, event):
+        """마우스 휠로 줌 인/아웃"""
+        # 줌 팩터 계산
+        zoom_in_factor = 1.15
+        zoom_out_factor = 1 / zoom_in_factor
+        
+        # 휠 방향에 따라 줌
+        if event.angleDelta().y() > 0:
+            zoom_factor = zoom_in_factor
+            self.current_scale *= zoom_factor
+        else:
+            zoom_factor = zoom_out_factor
+            self.current_scale *= zoom_factor
+        
+        # 줌 제한 (50% ~ 300%)
+        if self.current_scale < 0.5:
+            self.current_scale = 0.5
+            return
+        if self.current_scale > 3.0:
+            self.current_scale = 3.0
+            return
+        
+        self.scale(zoom_factor, zoom_factor)
+    
+    def zoom_in(self):
+        """확대"""
+        zoom_factor = 1.25
+        self.current_scale *= zoom_factor
+        if self.current_scale > 3.0:
+            self.current_scale = 3.0
+            self.resetTransform()
+            self.scale(self.current_scale, self.current_scale)
+            return
+        self.scale(zoom_factor, zoom_factor)
+    
+    def zoom_out(self):
+        """축소"""
+        zoom_factor = 0.8
+        self.current_scale *= zoom_factor
+        if self.current_scale < 0.5:
+            self.current_scale = 0.5
+            self.resetTransform()
+            self.scale(self.current_scale, self.current_scale)
+            return
+        self.scale(zoom_factor, zoom_factor)
+    
+    def fit_in_view(self):
+        """전체 보기"""
+        self.fitInView(self.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.current_scale = self.transform().m11()

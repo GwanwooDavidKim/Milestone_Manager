@@ -8,7 +8,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QPainter
 from typing import List, Dict, Set, Optional
 
 from data_manager import DataManager
-from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog, DateFilterDialog
+from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog, DateFilterDialog, ZoomableTimelineDialog
 from timeline_canvas import TimelineCanvas
 
 
@@ -706,6 +706,12 @@ class MainWindow(QMainWindow):
         edit_milestone_btn.clicked.connect(lambda: self._edit_milestone(milestone["id"]))
         btn_layout.addWidget(edit_milestone_btn)
         
+        # 타임라인 확대 보기 버튼
+        zoom_btn = QPushButton("🔍 확대 보기")
+        zoom_btn.setObjectName("secondary")
+        zoom_btn.clicked.connect(lambda: self._show_zoomable_timeline(milestone))
+        btn_layout.addWidget(zoom_btn)
+        
         add_btn = QPushButton("➕ Node 추가")
         add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
         btn_layout.addWidget(add_btn)
@@ -838,3 +844,8 @@ class MainWindow(QMainWindow):
                 return
         
         self._show_message(QMessageBox.Icon.Warning, "경고", "먼저 노드를 선택해주세요.")
+    
+    def _show_zoomable_timeline(self, milestone: Dict):
+        """타임라인 확대 보기 다이얼로그 표시"""
+        dialog = ZoomableTimelineDialog(self, milestone)
+        dialog.exec()

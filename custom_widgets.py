@@ -3,7 +3,7 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                               QLineEdit, QPushButton, QComboBox, QTextEdit,
                               QFileDialog, QColorDialog, QMessageBox)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 from typing import Optional, Dict
 import re
@@ -454,3 +454,81 @@ class SearchFilterDialog(ModernDialog):
             "shape": None if self.shape_combo.currentText() == "전체" else self.shape_combo.currentText()
         }
         self.accept()
+
+
+class ZoomableTimelineDialog(ModernDialog):
+    """확대 가능한 타임라인 다이얼로그"""
+    
+    def __init__(self, parent=None, milestone_data: dict = None):
+        super().__init__(parent, f"타임라인 확대 보기 - {milestone_data.get('title', '')}")
+        self.setMinimumSize(1200, 700)
+        self.milestone_data = milestone_data or {"nodes": []}
+        
+        from timeline_canvas import TimelineCanvas, ZoomableTimelineView
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # 컨트롤 버튼
+        control_layout = QHBoxLayout()
+        
+        zoom_in_btn = QPushButton("➕ 확대")
+        zoom_in_btn.setObjectName("secondary")
+        zoom_in_btn.setFixedWidth(100)
+        zoom_in_btn.clicked.connect(self._zoom_in)
+        control_layout.addWidget(zoom_in_btn)
+        
+        zoom_out_btn = QPushButton("➖ 축소")
+        zoom_out_btn.setObjectName("secondary")
+        zoom_out_btn.setFixedWidth(100)
+        zoom_out_btn.clicked.connect(self._zoom_out)
+        control_layout.addWidget(zoom_out_btn)
+        
+        fit_btn = QPushButton("⊡ 전체보기")
+        fit_btn.setObjectName("secondary")
+        fit_btn.setFixedWidth(120)
+        fit_btn.clicked.connect(self._fit_in_view)
+        control_layout.addWidget(fit_btn)
+        
+        control_layout.addStretch()
+        
+        info_label = QLabel("💡 마우스 휠로 확대/축소, 드래그로 이동")
+        info_label.setStyleSheet("color: #86868b; font-size: 12px;")
+        control_layout.addWidget(info_label)
+        
+        layout.addLayout(control_layout)
+        
+        # 타임라인 캔버스 생성 (큰 사이즈)
+        canvas = TimelineCanvas(self, milestone_data, None)
+        canvas.setFixedSize(2400, 600)  # 큰 사이즈로 생성
+        canvas.draw_timeline()
+        
+        # ZoomableTimelineView로 표시
+        self.zoom_view = ZoomableTimelineView(canvas.scene, self)
+        self.zoom_view.setMinimumSize(1160, 500)
+        layout.addWidget(self.zoom_view)
+        
+        # 닫기 버튼
+        close_btn = QPushButton("닫기")
+        close_btn.setFixedWidth(100)
+        close_btn.clicked.connect(self.accept)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(close_btn)
+        layout.addLayout(btn_layout)
+        
+        self.setLayout(layout)
+        
+        # 초기에 전체보기
+        QTimer.singleShot(100, self._fit_in_view)
+    
+    def _zoom_in(self):
+        self.zoom_view.zoom_in()
+    
+    def _zoom_out(self):
+        self.zoom_view.zoom_out()
+    
+    def _fit_in_view(self):
+        self.zoom_view.fit_in_view()
