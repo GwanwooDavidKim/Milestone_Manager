@@ -201,13 +201,14 @@ class TimelineCanvas(QWidget):
         
         # 메인 UI와 확대 보기 구분하여 처리
         if self.is_zoomable:
-            # 확대 보기: 동적 높이 계산
+            # 확대 보기: 동적 높이 계산 (하단 여백 최소화)
             if node_positions:
                 min_y = min(y for _, _, y in node_positions)
                 max_y = max(y for _, _, y in node_positions)
                 
+                # 상단 마진은 충분히, 하단 마진은 최소화
                 top_margin = max(80, timeline_y - min_y + 50)
-                bottom_margin = max(80, max_y - timeline_y + 50)
+                bottom_margin = 80  # 하단은 고정 최소값
                 adjusted_timeline_y = top_margin
                 
                 content_height = max_y - min_y
@@ -265,8 +266,15 @@ class TimelineCanvas(QWidget):
             for node_data, x, y in adjusted_positions:
                 self._draw_node(node_data, x, y, adjusted_timeline_y)
         else:
-            # 메인 UI: 500px 고정, 타임라인 중앙 배치
-            required_height = 500
+            # 메인 UI: 스크롤 가능하도록 실제 필요한 높이 계산
+            if node_positions:
+                min_y = min(y for _, _, y in node_positions)
+                max_y = max(y for _, _, y in node_positions)
+                # 실제 콘텐츠 높이에 맞춰 scene 설정
+                required_height = max(500, max_y + 100)
+            else:
+                required_height = 500
+            
             adjusted_timeline_y = timeline_y
             
             # 이번달 점선

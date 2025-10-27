@@ -735,8 +735,8 @@ class MainWindow(QMainWindow):
             milestone_data=milestone,
             on_node_click=lambda nd: self._on_node_selected(milestone["id"], nd)
         )
-        # 메인 UI에서는 고정 높이로 표시 (3개 블록이 보이도록)
-        timeline.setFixedHeight(500)
+        # 메인 UI에서는 250px 고정 높이, 내부 스크롤 가능
+        timeline.setFixedHeight(250)
         block_layout.addWidget(timeline)
         
         self.scroll_layout.addWidget(block)
