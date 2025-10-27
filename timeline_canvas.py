@@ -129,7 +129,8 @@ class TimelineCanvas(QWidget):
         max_year = max(years_set)
         years = list(range(min_year, max_year + 1))
         
-        timeline_y = height / 2
+        # 타임라인은 상단에서 고정 거리에 위치
+        timeline_y = 250
         start_x = 80
         end_x = width - 20
         timeline_width = end_x - start_x
