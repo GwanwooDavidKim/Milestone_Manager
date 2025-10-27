@@ -132,9 +132,9 @@ class TimelineCanvas(QWidget):
         
         # 타임라인은 중앙에 위치 (균형있는 배치)
         if self.is_zoomable:
-            timeline_y = 300  # 확대 보기는 더 많은 공간
+            timeline_y = 250  # 확대 보기는 더 많은 공간
         else:
-            timeline_y = 250  # 메인 UI는 고정
+            timeline_y = 200  # 메인 UI는 400px 기준으로 200에 위치
         start_x = 80
         end_x = width - 20
         timeline_width = end_x - start_x
@@ -270,10 +270,10 @@ class TimelineCanvas(QWidget):
             if node_positions:
                 min_y = min(y for _, _, y in node_positions)
                 max_y = max(y for _, _, y in node_positions)
-                # 실제 콘텐츠 높이에 맞춰 scene 설정
-                required_height = max(500, max_y + 100)
+                # 실제 콘텐츠 높이에 맞춰 scene 설정 (400px 기준)
+                required_height = max(400, max_y + 80)
             else:
-                required_height = 500
+                required_height = 400
             
             adjusted_timeline_y = timeline_y
             
@@ -346,10 +346,26 @@ class TimelineCanvas(QWidget):
             else:
                 base_x = start_x
             
-            # 3단계: 같은 날짜 그룹 내 노드들 배치
+            # 3단계: 월별 고정 높이 배치
+            # 월별 고정 y 위치 계산
+            if month % 2 == 1:  # 홀수 월 - 타임라인 아래
+                if month % 6 == 1:  # 1월, 7월
+                    base_y = timeline_y + 60
+                elif month % 6 == 3:  # 3월, 9월
+                    base_y = timeline_y + 120
+                else:  # 5월, 11월
+                    base_y = timeline_y + 180
+            else:  # 짝수 월 - 타임라인 위
+                if month % 6 == 2:  # 2월, 8월
+                    base_y = timeline_y - 180
+                elif month % 6 == 4:  # 4월, 10월
+                    base_y = timeline_y - 120
+                else:  # 6월, 12월 (month % 6 == 0)
+                    base_y = timeline_y - 60
+            
+            # 같은 날짜 그룹 내 노드들은 x축으로만 분산
             for group_idx, node in enumerate(group_nodes):
                 # x좌표 분산: 0, +50, -50, +100, -100, +150, -150...
-                # 겹침 방지를 위해 간격을 크게 설정
                 if group_idx == 0:
                     x_offset = 0
                 elif group_idx % 2 == 1:
@@ -358,26 +374,7 @@ class TimelineCanvas(QWidget):
                     x_offset = -(group_idx // 2) * 50
                 
                 x_pos = base_x + x_offset
-                
-                # 같은 날짜 그룹 내에서 위-아래 교대 배치
-                # 기본 방향은 date_val % 2로 결정하되, 그룹 내에서 교대
-                base_alternating = date_val % 2
-                if group_idx % 2 == 1:
-                    alternating = 1 - base_alternating  # 반대 방향
-                else:
-                    alternating = base_alternating  # 같은 방향
-                
-                # 겹침 체크 - 적절한 간격 설정
-                y_offset = 0
-                base_distance = 70  # 기본 거리 적당하게
-                for occupied_x, occupied_y in occupied_positions:
-                    if abs(occupied_x - x_pos) < 200:
-                        y_offset = max(y_offset, abs(occupied_y - timeline_y) - base_distance + 50)
-                
-                if alternating == 0:
-                    y_pos = timeline_y - base_distance - y_offset
-                else:
-                    y_pos = timeline_y + base_distance + y_offset
+                y_pos = base_y  # 월별 고정 높이
                 
                 layout.append((node, x_pos, y_pos))
                 occupied_positions.append((x_pos, y_pos))
