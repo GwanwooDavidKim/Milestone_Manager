@@ -478,7 +478,8 @@ class TimelineCanvas(QWidget):
         node_size = 20
         
         # 두 번째 모양이 있는 경우 나란히 배치
-        if shape2 and color2:
+        has_dual_shapes = shape2 and color2
+        if has_dual_shapes:
             # 첫 번째 노드 (왼쪽)
             node_item = self._draw_single_shape(shape, color, x - 12, y, node_size)
             # 두 번째 노드 (오른쪽)
@@ -515,7 +516,9 @@ class TimelineCanvas(QWidget):
         )
         
         checkbox_proxy = self.scene.addWidget(checkbox)
-        checkbox_proxy.setPos(x - 32, y - 8)  # 간격 줄이고 중간 맞춤
+        # 노드 개수에 따라 체크박스 위치 조정 (두 개일 때는 더 왼쪽에)
+        checkbox_x = x - 50 if has_dual_shapes else x - 32
+        checkbox_proxy.setPos(checkbox_x, y - 8)
         self.node_checkboxes[node_id] = checkbox
         
         # 날짜와 내용 텍스트
