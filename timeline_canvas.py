@@ -381,10 +381,55 @@ class TimelineCanvas(QWidget):
         
         return layout
     
+    def _draw_single_shape(self, shape: str, color: QColor, node_x: float, node_y: float, node_size: float = 20):
+        """단일 노드 모양을 그립니다"""
+        node_item = None
+        
+        if "●" in shape or "동그라미" in shape:
+            node_item = self.scene.addEllipse(node_x - node_size/2, node_y - node_size/2, node_size, node_size)
+            node_item.setBrush(QBrush(color))
+            node_item.setPen(QPen(QColor("white"), 2))
+        
+        elif "▲" in shape or "세모" in shape:
+            polygon = QPolygonF([
+                QPointF(node_x, node_y - node_size*0.6),
+                QPointF(node_x - node_size*0.5, node_y + node_size*0.4),
+                QPointF(node_x + node_size*0.5, node_y + node_size*0.4)
+            ])
+            node_item = self.scene.addPolygon(polygon)
+            node_item.setBrush(QBrush(color))
+            node_item.setPen(QPen(QColor("white"), 2))
+        
+        elif "■" in shape or "네모" in shape:
+            node_item = self.scene.addRect(node_x - node_size/2, node_y - node_size/2, node_size, node_size)
+            node_item.setBrush(QBrush(color))
+            node_item.setPen(QPen(QColor("white"), 2))
+        
+        elif "★" in shape or "별" in shape:
+            star_path = self._get_star_path(node_x, node_y, node_size*0.6, 5)
+            node_item = self.scene.addPath(star_path)
+            node_item.setBrush(QBrush(color))
+            node_item.setPen(QPen(QColor("white"), 2))
+        
+        else:  # 마름모
+            polygon = QPolygonF([
+                QPointF(node_x, node_y - node_size/2),
+                QPointF(node_x + node_size/2, node_y),
+                QPointF(node_x, node_y + node_size/2),
+                QPointF(node_x - node_size/2, node_y)
+            ])
+            node_item = self.scene.addPolygon(polygon)
+            node_item.setBrush(QBrush(color))
+            node_item.setPen(QPen(QColor("white"), 2))
+        
+        return node_item
+    
     def _draw_node(self, node_data: Dict, x: float, y: float, timeline_y: float):
-        """노드를 그립니다 - 체크박스, 첨부파일, 메모 이모지 포함"""
+        """노드를 그립니다 - 체크박스, 첨부파일, 메모 이모지, 두 번째 모양 포함"""
         shape = node_data.get("shape", "●(동그라미)")
         color = QColor(node_data.get("color", "#FF6B6B"))
+        shape2 = node_data.get("shape2", "")
+        color2 = QColor(node_data.get("color2", "#4A90E2")) if node_data.get("color2") else None
         content = node_data.get("content", "")
         memo = node_data.get("memo", "")
         attachment = node_data.get("attachment", "")
@@ -395,45 +440,17 @@ class TimelineCanvas(QWidget):
         connector_line = self.scene.addLine(x, timeline_y, x, y)
         connector_line.setPen(QPen(QColor("#d2d2d7"), 1, Qt.PenStyle.DashLine))
         
-        node_item = None
         node_size = 20
         
-        if "●" in shape or "동그라미" in shape:
-            node_item = self.scene.addEllipse(x - node_size/2, y - node_size/2, node_size, node_size)
-            node_item.setBrush(QBrush(color))
-            node_item.setPen(QPen(QColor("white"), 2))
-        
-        elif "▲" in shape or "세모" in shape:
-            polygon = QPolygonF([
-                QPointF(x, y - node_size*0.6),
-                QPointF(x - node_size*0.5, y + node_size*0.4),
-                QPointF(x + node_size*0.5, y + node_size*0.4)
-            ])
-            node_item = self.scene.addPolygon(polygon)
-            node_item.setBrush(QBrush(color))
-            node_item.setPen(QPen(QColor("white"), 2))
-        
-        elif "■" in shape or "네모" in shape:
-            node_item = self.scene.addRect(x - node_size/2, y - node_size/2, node_size, node_size)
-            node_item.setBrush(QBrush(color))
-            node_item.setPen(QPen(QColor("white"), 2))
-        
-        elif "★" in shape or "별" in shape:
-            star_path = self._get_star_path(x, y, node_size*0.6, 5)
-            node_item = self.scene.addPath(star_path)
-            node_item.setBrush(QBrush(color))
-            node_item.setPen(QPen(QColor("white"), 2))
-        
-        else:  # 마름모
-            polygon = QPolygonF([
-                QPointF(x, y - node_size/2),
-                QPointF(x + node_size/2, y),
-                QPointF(x, y + node_size/2),
-                QPointF(x - node_size/2, y)
-            ])
-            node_item = self.scene.addPolygon(polygon)
-            node_item.setBrush(QBrush(color))
-            node_item.setPen(QPen(QColor("white"), 2))
+        # 두 번째 모양이 있는 경우 나란히 배치
+        if shape2 and color2:
+            # 첫 번째 노드 (왼쪽)
+            self._draw_single_shape(shape, color, x - 12, y, node_size)
+            # 두 번째 노드 (오른쪽)
+            self._draw_single_shape(shape2, color2, x + 12, y, node_size)
+        else:
+            # 하나만 있는 경우 중앙에 배치
+            self._draw_single_shape(shape, color, x, y, node_size)
         
         # 체크박스 추가 (노드 왼쪽, 간격 조정, 중간 맞춤)
         checkbox = QCheckBox()
