@@ -320,7 +320,7 @@ class TimelineCanvas(QWidget):
     def _calculate_node_positions(self, nodes: List[Dict], years: List[int], 
                                    year_spacing: float, start_x: float, 
                                    timeline_y: float) -> List[Tuple]:
-        """노드 위치 계산 - 같은 날짜 노드 겹침 방지"""
+        """노드 위치 계산 - 같은 날짜 노드 겹침 방지, 동적 높이 재할당"""
         layout = []
         occupied_positions = []
         
@@ -331,6 +331,14 @@ class TimelineCanvas(QWidget):
             date = node.get("date", "")
             date_val = self._parse_date(date)
             date_groups[date_val].append(node)
+        
+        # 1.5단계: 연도별 실제 존재하는 월 추출 (동적 높이 재할당을 위해)
+        year_month_map = defaultdict(set)
+        for date_val in date_groups.keys():
+            year = date_val // 100
+            month = date_val % 100
+            if month <= 12:  # 분기(Q) 데이터는 제외
+                year_month_map[year].add(month)
         
         # 2단계: 각 날짜 그룹별로 처리
         for date_val, group_nodes in date_groups.items():
@@ -346,22 +354,8 @@ class TimelineCanvas(QWidget):
             else:
                 base_x = start_x
             
-            # 3단계: 월별 고정 높이 배치
-            # 월별 고정 y 위치 계산
-            if month % 2 == 1:  # 홀수 월 - 타임라인 아래
-                if month % 6 == 1:  # 1월, 7월
-                    base_y = timeline_y + 60
-                elif month % 6 == 3:  # 3월, 9월
-                    base_y = timeline_y + 120
-                else:  # 5월, 11월
-                    base_y = timeline_y + 180
-            else:  # 짝수 월 - 타임라인 위
-                if month % 6 == 2:  # 2월, 8월
-                    base_y = timeline_y - 180
-                elif month % 6 == 4:  # 4월, 10월
-                    base_y = timeline_y - 120
-                else:  # 6월, 12월 (month % 6 == 0)
-                    base_y = timeline_y - 60
+            # 3단계: 동적 높이 재할당 배치
+            base_y = self._get_dynamic_y_position(year, month, year_month_map, timeline_y)
             
             # 같은 날짜 그룹 내 노드들은 x축으로만 분산
             for group_idx, node in enumerate(group_nodes):
@@ -374,12 +368,53 @@ class TimelineCanvas(QWidget):
                     x_offset = -(group_idx // 2) * 50
                 
                 x_pos = base_x + x_offset
-                y_pos = base_y  # 월별 고정 높이
+                y_pos = base_y  # 동적 할당된 높이
                 
                 layout.append((node, x_pos, y_pos))
                 occupied_positions.append((x_pos, y_pos))
         
         return layout
+    
+    def _get_dynamic_y_position(self, year: int, month: int, year_month_map: Dict, timeline_y: float) -> float:
+        """그룹 내 실제 데이터 기반으로 동적 위치 계산"""
+        
+        # 해당 연도의 실제 존재하는 월들
+        existing_months = year_month_map.get(year, set())
+        
+        # 그룹 정의 및 위치 설정
+        if month in [1, 3, 5]:
+            group = [1, 3, 5]
+            base_positions = [60, 120, 180]
+            direction = 1  # 아래
+        elif month in [2, 4, 6]:
+            group = [2, 4, 6]
+            base_positions = [60, 120, 180]
+            direction = -1  # 위
+        elif month in [7, 9, 11]:
+            group = [7, 9, 11]
+            base_positions = [60, 120, 180]
+            direction = 1  # 아래
+        elif month in [8, 10, 12]:
+            group = [8, 10, 12]
+            base_positions = [60, 120, 180]
+            direction = -1  # 위
+        else:
+            # 분기 데이터는 기존 로직 유지
+            return timeline_y
+        
+        # 그룹 내 실제 존재하는 월들만 필터링하여 정렬
+        existing_in_group = sorted([m for m in group if m in existing_months])
+        
+        # 현재 월이 그룹에 없다면 기본 위치 반환 (예외 처리)
+        if month not in existing_in_group:
+            return timeline_y
+        
+        # 현재 월의 순서 찾기 (0, 1, 2)
+        index = existing_in_group.index(month)
+        
+        # 동적 위치 할당: 존재하는 월 개수만큼만 사용
+        y_offset = base_positions[index]
+        return timeline_y + (y_offset * direction)
     
     def _draw_single_shape(self, shape: str, color: QColor, node_x: float, node_y: float, node_size: float = 20):
         """단일 노드 모양을 그립니다"""
