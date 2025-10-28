@@ -156,16 +156,17 @@ class NodeDialog(ModernDialog):
     
     def __init__(self, parent=None, node_data: Optional[Dict] = None):
         super().__init__(parent, "노드 추가" if not node_data else "노드 수정")
-        self.setFixedSize(550, 650)
+        self.setFixedSize(550, 800)
         self.result = None
         self.selected_color = node_data.get("color", "#FF6B6B") if node_data else "#FF6B6B"
+        self.selected_color2 = node_data.get("color2", "") if node_data else ""
         self.attached_file = node_data.get("attachment", "") if node_data else ""
         
         layout = QVBoxLayout()
         layout.setSpacing(12)
         layout.setContentsMargins(30, 30, 30, 30)
         
-        layout.addWidget(QLabel("모양"))
+        layout.addWidget(QLabel("모양 1 (필수)"))
         self.shape_combo = QComboBox()
         self.shape_combo.addItems(self.SHAPES)
         if node_data:
@@ -173,7 +174,7 @@ class NodeDialog(ModernDialog):
             self.shape_combo.setCurrentIndex(idx)
         layout.addWidget(self.shape_combo)
         
-        layout.addWidget(QLabel("색상"))
+        layout.addWidget(QLabel("색상 1 (필수)"))
         color_layout = QHBoxLayout()
         self.color_btn = QPushButton(f"선택된 색상: {self.selected_color}")
         self.color_btn.setStyleSheet(f"""
@@ -188,6 +189,43 @@ class NodeDialog(ModernDialog):
         self.color_btn.clicked.connect(self._choose_color)
         color_layout.addWidget(self.color_btn)
         layout.addLayout(color_layout)
+        
+        # 두 번째 모양/색상 (선택사항)
+        layout.addWidget(QLabel("모양 2 (선택사항 - 같은 날짜에 여러 항목 구분용)"))
+        self.shape_combo2 = QComboBox()
+        self.shape_combo2.addItem("없음")
+        self.shape_combo2.addItems(self.SHAPES)
+        if node_data and node_data.get("shape2"):
+            idx = self.SHAPES.index(node_data.get("shape2", self.SHAPES[0]))
+            self.shape_combo2.setCurrentIndex(idx + 1)  # +1은 "없음" 때문
+        layout.addWidget(self.shape_combo2)
+        
+        layout.addWidget(QLabel("색상 2 (선택사항)"))
+        color_layout2 = QHBoxLayout()
+        self.color_btn2 = QPushButton(f"선택된 색상: {self.selected_color2 if self.selected_color2 else '없음'}")
+        if self.selected_color2:
+            self.color_btn2.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {self.selected_color2};
+                    border: 2px solid #d2d2d7;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: bold;
+                }}
+            """)
+        else:
+            self.color_btn2.setStyleSheet("""
+                QPushButton {
+                    background-color: #e8e8ed;
+                    border: 2px solid #d2d2d7;
+                    border-radius: 8px;
+                    color: #1d1d1f;
+                    font-weight: bold;
+                }
+            """)
+        self.color_btn2.clicked.connect(self._choose_color2)
+        color_layout2.addWidget(self.color_btn2)
+        layout.addLayout(color_layout2)
         
         layout.addWidget(QLabel("날짜 (YY.MM 또는 YY.Qn 형식만 허용)"))
         self.date_input = QLineEdit()
@@ -249,6 +287,22 @@ class NodeDialog(ModernDialog):
             self.color_btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {self.selected_color};
+                    border: 2px solid #d2d2d7;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: bold;
+                }}
+            """)
+    
+    def _choose_color2(self):
+        initial_color = QColor(self.selected_color2) if self.selected_color2 else QColor("#4A90E2")
+        color = QColorDialog.getColor(initial_color, self)
+        if color.isValid():
+            self.selected_color2 = color.name()
+            self.color_btn2.setText(f"선택된 색상: {self.selected_color2}")
+            self.color_btn2.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {self.selected_color2};
                     border: 2px solid #d2d2d7;
                     border-radius: 8px;
                     color: white;
@@ -333,9 +387,19 @@ class NodeDialog(ModernDialog):
             msg.exec()
             return
         
+        # 두 번째 모양/색상 처리
+        shape2 = self.shape_combo2.currentText()
+        if shape2 == "없음":
+            shape2 = ""
+            color2 = ""
+        else:
+            color2 = self.selected_color2
+        
         self.result = {
             "shape": self.shape_combo.currentText(),
             "color": self.selected_color,
+            "shape2": shape2,
+            "color2": color2,
             "date": date,
             "content": content,
             "memo": self.memo_input.toPlainText().strip(),
