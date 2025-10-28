@@ -33,7 +33,7 @@ The application is structured into several Python modules:
 
 ### Technical Implementations
 - **Timeline Visualization**: Features quarterly (e.g., 24.Q1) and monthly scales, dynamic year expansion to include current and intermediate years, and "This Month" indicator.
-- **Node Management**: Nodes (events) can be customized by shape, color, date (YY.MM or YY.Qn format with validation), content, memo (tooltip on hover), and attached files. Selection is via checkboxes, allowing one node at a time for modification or deletion.
+- **Node Management**: Nodes (events) can be customized by shape, color, date (YY.MM or YY.Qn format with validation), content, memo (tooltip on hover), and attached files. Each node now supports a second optional shape and color (shape2, color2) to distinguish multiple items on the same date (e.g., different equipment types). Selection is via checkboxes, allowing one node at a time for modification or deletion.
 - **Data Persistence**: All data is stored in `raw.json`. Automatic loading on startup, real-time status display, warning for empty saves, and automatic backups (`raw.json.backup`) are implemented for data safety.
 - **Search and Filter**: Capabilities include keyword search across milestone titles/subtitles, content search within nodes, shape-based filtering, and date-based filtering by year and quarter. A "This Month" filter is also available.
 - **Image Export**: Individual milestone blocks can be exported as PNG/JPG images, automatically saved to a `Milestone_IMG` folder.
