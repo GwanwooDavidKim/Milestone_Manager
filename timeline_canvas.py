@@ -256,9 +256,12 @@ class TimelineCanvas(QWidget):
                     month_text = self.scene.addText("이번달")
                     month_text.setDefaultTextColor(QColor("#FF3B30"))
                     month_text.setFont(QFont("Apple SD Gothic Neo", 10, QFont.Weight.Bold))
-                    month_text.setPos(current_x + 5, 25)
+                    month_text.setPos(current_x + 5, adjusted_timeline_y - 45)
                     pen = QPen(QColor("#FF3B30"), 2, Qt.PenStyle.DashLine)
-                    current_line = self.scene.addLine(current_x, 20, current_x, required_height - 20)
+                    # 타임라인 기준으로 대칭적으로 점선 그리기
+                    line_top = max(20, adjusted_timeline_y - 180)
+                    line_bottom = min(required_height - 20, adjusted_timeline_y + 180)
+                    current_line = self.scene.addLine(current_x, line_top, current_x, line_bottom)
                     current_line.setPen(pen)
             
             self.scene.setSceneRect(0, 0, width + 100, required_height)
