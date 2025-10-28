@@ -509,8 +509,11 @@ class TimelineCanvas(QWidget):
             content_bounds = content_text.boundingRect()
             content_text.setPos(x - content_bounds.width() / 2, y + 30)
         
-        # 이모지 위치 계산
-        emoji_x = x + 15
+        # 이모지 위치 계산 (두 번째 노드가 있으면 더 오른쪽에 배치)
+        if shape2 and color2:
+            emoji_x = x + 28  # 두 개의 노드가 있을 때 (x+12 + 노드크기10 + 여유6)
+        else:
+            emoji_x = x + 15  # 하나의 노드만 있을 때
         
         # 첨부파일 아이콘 (QPushButton 사용)
         if attachment:
