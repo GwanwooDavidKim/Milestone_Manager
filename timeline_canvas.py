@@ -445,12 +445,12 @@ class TimelineCanvas(QWidget):
         # 두 번째 모양이 있는 경우 나란히 배치
         if shape2 and color2:
             # 첫 번째 노드 (왼쪽)
-            self._draw_single_shape(shape, color, x - 12, y, node_size)
+            node_item = self._draw_single_shape(shape, color, x - 12, y, node_size)
             # 두 번째 노드 (오른쪽)
             self._draw_single_shape(shape2, color2, x + 12, y, node_size)
         else:
             # 하나만 있는 경우 중앙에 배치
-            self._draw_single_shape(shape, color, x, y, node_size)
+            node_item = self._draw_single_shape(shape, color, x, y, node_size)
         
         # 체크박스 추가 (노드 왼쪽, 간격 조정, 중간 맞춤)
         checkbox = QCheckBox()
