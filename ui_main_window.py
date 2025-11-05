@@ -100,20 +100,21 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(15, 10, 15, 15)
+        main_layout.setSpacing(5)
         
-        # ===== 행1: 제목 + 버튼 툴바 =====
+        # ===== 행1: 제목 + 데이터 상태를 한 줄로 =====
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(10)
+        
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
             font-size: 22px;
             font-weight: bold;
             color: #1d1d1f;
-            margin-top: 0px;
-            margin-bottom: 2px;
             padding: 0px;
         """)
-        main_layout.addWidget(title_label)
+        header_layout.addWidget(title_label)
         
         # 데이터 상태 표시 레이블
         self.data_status_label = QLabel("⚠️ 데이터 없음")
@@ -123,10 +124,12 @@ class MainWindow(QMainWindow):
             padding: 2px 6px;
             background: #FFF3E0;
             border-radius: 3px;
-            margin-top: 0px;
-            margin-bottom: 2px;
         """)
-        main_layout.addWidget(self.data_status_label)
+        self.data_status_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        header_layout.addWidget(self.data_status_label)
+        header_layout.addStretch()
+        
+        main_layout.addLayout(header_layout)
         
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
@@ -195,15 +198,15 @@ class MainWindow(QMainWindow):
         # 키워드 Block
         self.keyword_block = KeywordBlock(self, self.data_manager)
         self.keyword_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
-        self.keyword_block.setMinimumHeight(200)
-        self.keyword_block.setMaximumHeight(250)
+        self.keyword_block.setMinimumHeight(280)
+        self.keyword_block.setMaximumHeight(320)
         self.keyword_block.keywords_changed.connect(self._on_keyword_filter_changed)
         row2_layout.addWidget(self.keyword_block)
         
         # 이번달 일정 Block
         self.this_month_block = ThisMonthBlock(self)
-        self.this_month_block.setMinimumHeight(200)
-        self.this_month_block.setMaximumHeight(250)
+        self.this_month_block.setMinimumHeight(280)
+        self.this_month_block.setMaximumHeight(320)
         row2_layout.addWidget(self.this_month_block, stretch=1)
         
         main_layout.addLayout(row2_layout)
@@ -572,8 +575,6 @@ class MainWindow(QMainWindow):
                 padding: 2px 6px;
                 background: #E8F5E9;
                 border-radius: 3px;
-                margin-top: 0px;
-                margin-bottom: 2px;
             """)
     
     def _should_show_milestone(self, milestone: Dict) -> bool:

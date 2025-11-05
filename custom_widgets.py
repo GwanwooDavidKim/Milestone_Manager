@@ -600,6 +600,88 @@ class ZoomableTimelineDialog(ModernDialog):
         self.zoom_view.fit_in_view()
 
 
+class ClickableKeywordFrame(QFrame):
+    """클릭 가능한 키워드 프레임"""
+    
+    clicked = pyqtSignal(str)  # 클릭 시그널
+    
+    def __init__(self, keyword: str, parent=None):
+        super().__init__(parent)
+        self.keyword = keyword
+        self.is_selected = False
+        
+        # 레이아웃 설정
+        layout = QHBoxLayout()
+        layout.setContentsMargins(8, 8, 8, 8)
+        
+        # 체크박스 (시각적 표시용)
+        self.checkbox = QCheckBox()
+        self.checkbox.setStyleSheet("""
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border-radius: 4px;
+                border: 2px solid #d2d2d7;
+                background: white;
+            }
+            QCheckBox::indicator:checked {
+                background: #34C759;
+                border: 2px solid #34C759;
+            }
+        """)
+        layout.addWidget(self.checkbox)
+        
+        # 키워드 레이블
+        self.label = QLabel(keyword)
+        self.label.setStyleSheet("""
+            color: #1d1d1f;
+            font-size: 12px;
+        """)
+        layout.addWidget(self.label)
+        layout.addStretch()
+        
+        self.setLayout(layout)
+        self._update_style()
+        
+        # 마우스 커서 변경
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+    
+    def toggle_selected(self):
+        """선택 상태 토글"""
+        self.is_selected = not self.is_selected
+        self.checkbox.setChecked(self.is_selected)
+        self._update_style()
+    
+    def _update_style(self):
+        """스타일 업데이트"""
+        if self.is_selected:
+            self.setStyleSheet("""
+                QFrame {
+                    background: #D4EDDA;
+                    border: 2px solid #34C759;
+                    border-radius: 4px;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QFrame {
+                    background: #f9f9f9;
+                    border: 1px solid #e8e8ed;
+                    border-radius: 4px;
+                }
+                QFrame:hover {
+                    background: #eeeeee;
+                    border: 1px solid #d2d2d7;
+                }
+            """)
+    
+    def mousePressEvent(self, event):
+        """마우스 클릭 이벤트"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.keyword)
+        super().mousePressEvent(event)
+
+
 class KeywordBlock(QWidget):
     """키워드 필터링 Block 위젯"""
     
@@ -707,49 +789,19 @@ class KeywordBlock(QWidget):
         
         keywords = self.data_manager.get_keywords()
         for keyword in keywords:
-            # 키워드 아이템을 담을 컨테이너 (배경색 구분)
-            item_frame = QFrame()
-            item_frame.setStyleSheet("""
-                QFrame {
-                    background: #f9f9f9;
-                    border: 1px solid #e8e8ed;
-                    border-radius: 4px;
-                    padding: 8px;
-                }
-            """)
+            # 키워드 아이템을 담을 클릭 가능한 컨테이너
+            item_frame = ClickableKeywordFrame(keyword)
+            item_frame.clicked.connect(lambda kw=keyword: self._toggle_keyword(kw))
             
-            item_layout = QHBoxLayout()
-            item_layout.setContentsMargins(0, 0, 0, 0)
-            
-            checkbox = QCheckBox(keyword)
-            checkbox.setStyleSheet("""
-                QCheckBox {
-                    color: #1d1d1f;
-                    font-size: 12px;
-                    spacing: 8px;
-                }
-                QCheckBox::indicator {
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 4px;
-                    border: 2px solid #d2d2d7;
-                    background: white;
-                }
-                QCheckBox::indicator:checked {
-                    background: #007AFF;
-                    border: 2px solid #007AFF;
-                    image: url(none);
-                }
-                QCheckBox::indicator:checked::after {
-                    content: "✓";
-                }
-            """)
-            checkbox.stateChanged.connect(self._on_keyword_selection_changed)
-            item_layout.addWidget(checkbox)
-            
-            item_frame.setLayout(item_layout)
             self.keyword_layout.addWidget(item_frame)
-            self.keyword_checkboxes[keyword] = checkbox
+            self.keyword_checkboxes[keyword] = item_frame
+    
+    def _toggle_keyword(self, keyword: str):
+        """키워드 선택/해제 토글"""
+        if keyword in self.keyword_checkboxes:
+            frame = self.keyword_checkboxes[keyword]
+            frame.toggle_selected()
+            self._emit_selected_keywords()
     
     def _add_keyword(self):
         """키워드 추가"""
@@ -763,7 +815,7 @@ class KeywordBlock(QWidget):
     
     def _delete_selected_keywords(self):
         """선택된 키워드 삭제"""
-        selected = [kw for kw, cb in self.keyword_checkboxes.items() if cb.isChecked()]
+        selected = [kw for kw, frame in self.keyword_checkboxes.items() if frame.is_selected]
         if selected:
             reply = QMessageBox.question(
                 self, "키워드 삭제",
@@ -775,18 +827,14 @@ class KeywordBlock(QWidget):
                 self.load_keywords()
                 self._emit_selected_keywords()
     
-    def _on_keyword_selection_changed(self):
-        """키워드 선택 변경"""
-        self._emit_selected_keywords()
-    
     def _emit_selected_keywords(self):
         """선택된 키워드 시그널 발송"""
-        selected = [kw for kw, cb in self.keyword_checkboxes.items() if cb.isChecked()]
+        selected = [kw for kw, frame in self.keyword_checkboxes.items() if frame.is_selected]
         self.keywords_changed.emit(selected)
     
     def get_selected_keywords(self) -> List[str]:
         """선택된 키워드 목록 반환"""
-        return [kw for kw, cb in self.keyword_checkboxes.items() if cb.isChecked()]
+        return [kw for kw, frame in self.keyword_checkboxes.items() if frame.is_selected]
 
 
 class ThisMonthBlock(QWidget):
