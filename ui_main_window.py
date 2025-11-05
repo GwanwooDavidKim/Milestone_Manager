@@ -39,12 +39,12 @@ class MainWindow(QMainWindow):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #007AFF, stop:1 #0051D5);
                 border: none;
-                border-radius: 5px;
+                border-radius: 4px;
                 color: white;
-                padding: 6px 12px;
-                font-size: 11px;
+                padding: 3px 8px;
+                font-size: 9px;
                 font-weight: bold;
-                min-height: 8px;
+                min-height: 5px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -100,8 +100,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(15, 5, 15, 15)
-        main_layout.setSpacing(3)
+        main_layout.setContentsMargins(15, 2, 15, 15)
+        main_layout.setSpacing(1)
         
         # ===== 행1: 제목 + 데이터 상태를 한 줄로 =====
         header_layout = QHBoxLayout()
@@ -109,10 +109,11 @@ class MainWindow(QMainWindow):
         
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #1d1d1f;
             padding: 0px;
+            margin: 0px;
         """)
         header_layout.addWidget(title_label)
         
@@ -130,7 +131,7 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(header_layout)
         
         toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        toolbar.setSpacing(4)
         
         load_btn = QPushButton("📂 Data Load")
         load_btn.clicked.connect(self.load_data)
