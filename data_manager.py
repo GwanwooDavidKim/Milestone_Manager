@@ -15,7 +15,7 @@ class DataManager:
             filename (str): 저장할 JSON 파일명 (기본값: raw.json)
         """
         self.filename = filename
-        self.data = {"milestones": []}
+        self.data = {"milestones": [], "keywords": []}
     
     def load_data(self) -> Dict:
         """raw.json 파일을 불러옵니다.
@@ -27,9 +27,12 @@ class DataManager:
             if os.path.exists(self.filename):
                 with open(self.filename, 'r', encoding='utf-8') as f:
                     self.data = json.load(f)
+                # keywords 필드가 없으면 추가
+                if "keywords" not in self.data:
+                    self.data["keywords"] = []
                 return self.data
             else:
-                return {"milestones": []}
+                return {"milestones": [], "keywords": []}
         except Exception as e:
             raise Exception(f"raw.json 파일을 불러올 수 없습니다: {str(e)}")
     
@@ -155,3 +158,34 @@ class DataManager:
             str: 타임스탬프 기반 ID
         """
         return str(int(datetime.now().timestamp() * 1000000))
+    
+    def get_keywords(self) -> List[str]:
+        """모든 키워드 목록을 반환합니다.
+        
+        Returns:
+            List[str]: 키워드 리스트
+        """
+        return self.data.get("keywords", [])
+    
+    def add_keyword(self, keyword: str) -> None:
+        """새로운 키워드를 추가합니다.
+        
+        Args:
+            keyword (str): 추가할 키워드
+        """
+        if "keywords" not in self.data:
+            self.data["keywords"] = []
+        if keyword and keyword not in self.data["keywords"]:
+            self.data["keywords"].append(keyword)
+    
+    def delete_keywords(self, keywords: List[str]) -> None:
+        """선택된 키워드들을 삭제합니다.
+        
+        Args:
+            keywords (List[str]): 삭제할 키워드 리스트
+        """
+        if "keywords" not in self.data:
+            self.data["keywords"] = []
+        self.data["keywords"] = [
+            k for k in self.data["keywords"] if k not in keywords
+        ]
