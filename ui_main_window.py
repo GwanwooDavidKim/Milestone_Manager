@@ -8,7 +8,9 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QPixmap, QPainter
 from typing import List, Dict, Set, Optional
 
 from data_manager import DataManager
-from custom_widgets import MilestoneDialog, NodeDialog, SearchFilterDialog, DateFilterDialog, ZoomableTimelineDialog
+from custom_widgets import (MilestoneDialog, NodeDialog, SearchFilterDialog, 
+                            DateFilterDialog, ZoomableTimelineDialog, 
+                            KeywordBlock, ThisMonthBlock)
 from timeline_canvas import TimelineCanvas
 
 
@@ -25,6 +27,8 @@ class MainWindow(QMainWindow):
         self.selected_milestone_ids: Set[str] = set()
         self.selected_nodes_by_milestone: Dict[str, Optional[Dict]] = {}  # 마일스톤별 선택된 노드
         self.filter_settings = None
+        self.current_milestone_index = 0  # 현재 표시 중인 마일스톤 인덱스
+        self.filtered_milestones = []  # 필터링된 마일스톤 목록
         
         self.setStyleSheet("""
             QMainWindow {
@@ -91,7 +95,7 @@ class MainWindow(QMainWindow):
         self.load_data(auto_load=True)
     
     def _create_ui(self):
-        """UI 구성"""
+        """UI 구성 - 3행 레이아웃"""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
@@ -99,6 +103,7 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(15, 15, 15, 15)
         main_layout.setSpacing(10)
         
+        # ===== 행1: 제목 + 버튼 툴바 =====
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
             font-size: 18px;
@@ -124,39 +129,34 @@ class MainWindow(QMainWindow):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
         
-        load_btn = QPushButton("📂 Data Load (Ctrl+L)")
+        load_btn = QPushButton("📂 Data Load")
         load_btn.clicked.connect(self.load_data)
         toolbar.addWidget(load_btn)
         
-        save_btn = QPushButton("💾 Data 저장 (Ctrl+S)")
+        save_btn = QPushButton("💾 저장")
         save_btn.clicked.connect(self.save_data)
         toolbar.addWidget(save_btn)
         
-        create_btn = QPushButton("➕ Milestone 생성")
+        create_btn = QPushButton("➕ 생성")
         create_btn.clicked.connect(self.create_milestone)
         toolbar.addWidget(create_btn)
         
-        delete_btn = QPushButton("🗑️ 선택 삭제")
+        delete_btn = QPushButton("🗑️ 삭제")
         delete_btn.setObjectName("danger")
         delete_btn.clicked.connect(self.delete_selected_milestones)
         toolbar.addWidget(delete_btn)
         
-        search_btn = QPushButton("🔍 검색/필터")
+        search_btn = QPushButton("🔍 검색")
         search_btn.setObjectName("secondary")
         search_btn.clicked.connect(self.open_search_filter)
         toolbar.addWidget(search_btn)
         
-        date_filter_btn = QPushButton("🗓️ 날짜 필터")
+        date_filter_btn = QPushButton("🗓️ 날짜")
         date_filter_btn.setObjectName("secondary")
         date_filter_btn.clicked.connect(self.filter_by_date)
         toolbar.addWidget(date_filter_btn)
         
-        this_month_btn = QPushButton("📌 이번달 일정")
-        this_month_btn.setObjectName("secondary")
-        this_month_btn.clicked.connect(self.filter_this_month)
-        toolbar.addWidget(this_month_btn)
-        
-        export_btn = QPushButton("📤 이미지 내보내기")
+        export_btn = QPushButton("📤 이미지")
         export_btn.setObjectName("secondary")
         export_btn.clicked.connect(self.export_image)
         toolbar.addWidget(export_btn)
@@ -167,9 +167,9 @@ class MainWindow(QMainWindow):
         self.filter_status_label = QLabel("")
         self.filter_status_label.setStyleSheet("""
             color: #007AFF;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: bold;
-            padding: 8px 12px;
+            padding: 6px 10px;
             background: #E3F2FD;
             border-radius: 6px;
         """)
@@ -177,25 +177,83 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(self.filter_status_label)
         
         # 필터 해제 버튼
-        self.clear_filter_btn = QPushButton("✖ 필터 해제")
+        self.clear_filter_btn = QPushButton("✖")
         self.clear_filter_btn.setObjectName("secondary")
+        self.clear_filter_btn.setFixedWidth(35)
         self.clear_filter_btn.clicked.connect(self.clear_filter)
         self.clear_filter_btn.hide()
         toolbar.addWidget(self.clear_filter_btn)
         
         main_layout.addLayout(toolbar)
         
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # ===== 행2: 키워드 Block (30%) + 이번달 일정 Block (70%) =====
+        row2_layout = QHBoxLayout()
+        row2_layout.setSpacing(10)
         
-        scroll_content = QWidget()
-        self.scroll_layout = QVBoxLayout(scroll_content)
-        self.scroll_layout.setSpacing(20)
-        self.scroll_layout.setContentsMargins(10, 10, 10, 10)
+        # 키워드 Block
+        self.keyword_block = KeywordBlock(self, self.data_manager)
+        self.keyword_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
+        self.keyword_block.setMinimumHeight(200)
+        self.keyword_block.setMaximumHeight(250)
+        self.keyword_block.keywords_changed.connect(self._on_keyword_filter_changed)
+        row2_layout.addWidget(self.keyword_block)
         
-        scroll.setWidget(scroll_content)
-        main_layout.addWidget(scroll)
+        # 이번달 일정 Block
+        self.this_month_block = ThisMonthBlock(self)
+        self.this_month_block.setMinimumHeight(200)
+        self.this_month_block.setMaximumHeight(250)
+        row2_layout.addWidget(self.this_month_block, stretch=1)
+        
+        main_layout.addLayout(row2_layout)
+        
+        # ===== 행3: 단일 Milestone Block + 페이지네이션 =====
+        # 페이지네이션 컨트롤
+        pagination_layout = QHBoxLayout()
+        pagination_layout.setSpacing(10)
+        
+        self.prev_btn = QPushButton("◀ 이전")
+        self.prev_btn.setObjectName("secondary")
+        self.prev_btn.setFixedWidth(100)
+        self.prev_btn.clicked.connect(self._show_previous_milestone)
+        pagination_layout.addWidget(self.prev_btn)
+        
+        self.milestone_nav_label = QLabel("0 / 0")
+        self.milestone_nav_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            color: #1d1d1f;
+            padding: 8px 16px;
+            background: #f5f5f7;
+            border-radius: 6px;
+        """)
+        self.milestone_nav_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        pagination_layout.addWidget(self.milestone_nav_label)
+        
+        self.next_btn = QPushButton("다음 ▶")
+        self.next_btn.setObjectName("secondary")
+        self.next_btn.setFixedWidth(100)
+        self.next_btn.clicked.connect(self._show_next_milestone)
+        pagination_layout.addWidget(self.next_btn)
+        
+        pagination_layout.addStretch()
+        
+        main_layout.addLayout(pagination_layout)
+        
+        # 단일 Milestone 표시 영역 (스크롤 없이 고정 높이)
+        self.milestone_container = QWidget()
+        self.milestone_container.setStyleSheet("""
+            background: white;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+        """)
+        self.milestone_layout = QVBoxLayout(self.milestone_container)
+        self.milestone_layout.setContentsMargins(0, 0, 0, 0)
+        self.milestone_layout.setSpacing(0)
+        
+        self.milestone_container.setMinimumHeight(450)
+        self.milestone_container.setMaximumHeight(450)
+        
+        main_layout.addWidget(self.milestone_container)
     
     def _show_message(self, icon, title, text):
         """메시지 박스 표시 (라이트 모드 스타일)"""
@@ -274,7 +332,10 @@ class MainWindow(QMainWindow):
             if os.path.exists("raw.json"):
                 shutil.copy2("raw.json", "raw.json.backup")
             
-            data = {"milestones": milestones}
+            data = {
+                "milestones": milestones,
+                "keywords": self.data_manager.get_keywords()
+            }
             self.data_manager.save_data(data)
             self._update_data_status()
             
@@ -388,6 +449,14 @@ class MainWindow(QMainWindow):
         """필터 상태 표시 업데이트"""
         if self.filter_settings:
             status_parts = []
+            
+            # 키워드 필터
+            if self.filter_settings.get("type") == "keyword":
+                keywords = self.filter_settings.get("keywords", [])
+                if keywords:
+                    kw_text = ", ".join(keywords)
+                    status_parts.append(f"📌 키워드: {kw_text}")
+            
             keyword = self.filter_settings.get("keyword", "")
             content_keyword = self.filter_settings.get("content_keyword", "")
             shape = self.filter_settings.get("shape", "")
@@ -396,7 +465,7 @@ class MainWindow(QMainWindow):
             
             if this_month:
                 current_month = self.filter_settings.get("current_month", 0)
-                status_parts.append(f"📌 이번달 일정 ({current_month}월)")
+                status_parts.append(f"📅 이번달 일정 ({current_month}월)")
             if date_filter:
                 year = self.filter_settings.get("filter_year", 0)
                 quarter = self.filter_settings.get("filter_quarter", 0)
@@ -409,7 +478,7 @@ class MainWindow(QMainWindow):
                 status_parts.append(f"모양: {shape}")
             
             if status_parts:
-                self.filter_status_label.setText("🔍 필터 적용 중: " + " | ".join(status_parts))
+                self.filter_status_label.setText("🔍 " + " | ".join(status_parts))
                 self.filter_status_label.show()
                 self.clear_filter_btn.show()
         else:
@@ -457,32 +526,26 @@ class MainWindow(QMainWindow):
                 self._show_message(QMessageBox.Icon.Critical, "오류", f"이미지 저장 실패: {str(e)}")
     
     def _refresh_ui(self):
-        """UI 새로고침"""
-        while self.scroll_layout.count():
-            item = self.scroll_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        
-        self.milestone_widgets.clear()
-        
+        """UI 새로고침 - 페이지네이션 방식"""
         milestones = self.data_manager.get_milestones()
         
-        if not milestones:
-            empty_label = QLabel("마일스톤이 없습니다. '➕ Milestone 생성' 버튼을 눌러 시작하세요.")
-            empty_label.setStyleSheet("""
-                color: #86868b;
-                font-size: 16px;
-                padding: 40px;
-            """)
-            empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.scroll_layout.addWidget(empty_label)
-            return
+        # 필터링된 마일스톤 목록 생성
+        self.filtered_milestones = [m for m in milestones if self._should_show_milestone(m)]
         
-        for milestone in milestones:
-            if self._should_show_milestone(milestone):
-                self._create_milestone_block(milestone)
+        # 키워드 Block reload
+        self.keyword_block.load_keywords()
         
-        self.scroll_layout.addStretch()
+        # 이번달 일정 Block 업데이트
+        self.this_month_block.update_nodes(milestones)
+        
+        # 현재 인덱스 범위 확인 및 조정
+        if not self.filtered_milestones:
+            self.current_milestone_index = 0
+        elif self.current_milestone_index >= len(self.filtered_milestones):
+            self.current_milestone_index = max(0, len(self.filtered_milestones) - 1)
+        
+        # 현재 마일스톤 표시
+        self._show_current_milestone()
     
     def _update_data_status(self):
         """데이터 상태 레이블 업데이트"""
@@ -514,6 +577,19 @@ class MainWindow(QMainWindow):
         """필터링 - 제목과 부제목에서만 검색"""
         if not self.filter_settings:
             return True
+        
+        # 키워드 필터 (여러 키워드 AND 조건)
+        if self.filter_settings.get("type") == "keyword":
+            keywords = self.filter_settings.get("keywords", [])
+            if keywords:
+                title = milestone.get("title", "").lower()
+                subtitle = milestone.get("subtitle", "").lower()
+                combined_text = title + " " + subtitle
+                
+                # 모든 키워드가 제목+부제목에 포함되어야 함 (AND 조건)
+                for kw in keywords:
+                    if kw.lower() not in combined_text:
+                        return False
         
         keyword = self.filter_settings.get("keyword", "")
         shape_filter = self.filter_settings.get("shape")
@@ -850,3 +926,67 @@ class MainWindow(QMainWindow):
         """타임라인 확대 보기 다이얼로그 표시"""
         dialog = ZoomableTimelineDialog(self, milestone)
         dialog.exec()
+    
+    def _on_keyword_filter_changed(self, selected_keywords: List[str]):
+        """키워드 필터 변경 핸들러"""
+        # 키워드가 선택되면 필터 적용
+        if selected_keywords:
+            self.filter_settings = {"type": "keyword", "keywords": selected_keywords}
+            self._update_filter_status()
+        else:
+            # 키워드가 없으면 필터 해제
+            if self.filter_settings and self.filter_settings.get("type") == "keyword":
+                self.clear_filter()
+        
+        # UI 갱신
+        self._refresh_ui()
+    
+    def _show_previous_milestone(self):
+        """이전 마일스톤 표시"""
+        if self.current_milestone_index > 0:
+            self.current_milestone_index -= 1
+            self._show_current_milestone()
+    
+    def _show_next_milestone(self):
+        """다음 마일스톤 표시"""
+        if self.current_milestone_index < len(self.filtered_milestones) - 1:
+            self.current_milestone_index += 1
+            self._show_current_milestone()
+    
+    def _show_current_milestone(self):
+        """현재 인덱스의 마일스톤 표시"""
+        # 기존 위젯 제거
+        for i in reversed(range(self.milestone_layout.count())):
+            widget = self.milestone_layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+        
+        # 마일스톤이 없으면 빈 메시지 표시
+        if not self.filtered_milestones:
+            no_data_label = QLabel("마일스톤이 없습니다.")
+            no_data_label.setStyleSheet("""
+                font-size: 14px;
+                color: #86868b;
+                padding: 50px;
+            """)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.milestone_layout.addWidget(no_data_label)
+            
+            self.prev_btn.setEnabled(False)
+            self.next_btn.setEnabled(False)
+            self.milestone_nav_label.setText("0 / 0")
+            return
+        
+        # 현재 마일스톤 표시
+        current_milestone = self.filtered_milestones[self.current_milestone_index]
+        milestone_widget = self._create_milestone_block(current_milestone)
+        self.milestone_layout.addWidget(milestone_widget)
+        
+        # 네비게이션 업데이트
+        total = len(self.filtered_milestones)
+        current = self.current_milestone_index + 1
+        self.milestone_nav_label.setText(f"{current} / {total}")
+        
+        # 버튼 활성화/비활성화
+        self.prev_btn.setEnabled(self.current_milestone_index > 0)
+        self.next_btn.setEnabled(self.current_milestone_index < total - 1)
