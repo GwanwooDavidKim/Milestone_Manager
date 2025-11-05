@@ -194,21 +194,19 @@ class MainWindow(QMainWindow):
         row2_layout = QHBoxLayout()
         row2_layout.setSpacing(10)
         
-        # 키워드 Block
+        # 키워드 Block - 고정 높이
         self.keyword_block = KeywordBlock(self, self.data_manager)
         self.keyword_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
-        self.keyword_block.setMinimumHeight(280)
-        self.keyword_block.setMaximumHeight(320)
+        self.keyword_block.setFixedHeight(300)  # 고정 높이
         self.keyword_block.keywords_changed.connect(self._on_keyword_filter_changed)
         row2_layout.addWidget(self.keyword_block)
         
-        # 이번달 일정 Block
+        # 이번달 일정 Block - 고정 높이
         self.this_month_block = ThisMonthBlock(self)
-        self.this_month_block.setMinimumHeight(280)
-        self.this_month_block.setMaximumHeight(320)
+        self.this_month_block.setFixedHeight(300)  # 고정 높이
         row2_layout.addWidget(self.this_month_block, stretch=1)
         
-        main_layout.addLayout(row2_layout)
+        main_layout.addLayout(row2_layout, stretch=0)
         
         # ===== 행3: 단일 Milestone Block + 페이지네이션 =====
         # 페이지네이션 컨트롤
