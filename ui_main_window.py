@@ -100,30 +100,28 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(15, 10, 15, 15)
-        main_layout.setSpacing(5)
+        main_layout.setContentsMargins(15, 5, 15, 15)
+        main_layout.setSpacing(3)
         
         # ===== 행1: 제목 + 데이터 상태를 한 줄로 =====
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(10)
+        header_layout.setSpacing(5)
         
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
-            font-size: 22px;
+            font-size: 16px;
             font-weight: bold;
             color: #1d1d1f;
             padding: 0px;
         """)
         header_layout.addWidget(title_label)
         
-        # 데이터 상태 표시 레이블
+        # 데이터 상태 표시 레이블 (배경색 제거)
         self.data_status_label = QLabel("⚠️ 데이터 없음")
         self.data_status_label.setStyleSheet("""
             color: #FF9500;
-            font-size: 10px;
-            padding: 2px 6px;
-            background: #FFF3E0;
-            border-radius: 3px;
+            font-size: 9px;
+            padding: 0px;
         """)
         self.data_status_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         header_layout.addWidget(self.data_status_label)
@@ -561,20 +559,15 @@ class MainWindow(QMainWindow):
             self.data_status_label.setText("⚠️ 데이터 없음")
             self.data_status_label.setStyleSheet("""
                 color: #FF9500;
-                font-size: 12px;
-                padding: 4px 8px;
-                background: #FFF3E0;
-                border-radius: 4px;
-                margin-bottom: 8px;
+                font-size: 9px;
+                padding: 0px;
             """)
         else:
-            self.data_status_label.setText(f"✅ 데이터 로드됨 ({count}개 마일스톤)")
+            self.data_status_label.setText(f"✅ 데이터 로드됨 ({count}개)")
             self.data_status_label.setStyleSheet("""
                 color: #34C759;
-                font-size: 10px;
-                padding: 2px 6px;
-                background: #E8F5E9;
-                border-radius: 3px;
+                font-size: 9px;
+                padding: 0px;
             """)
     
     def _should_show_milestone(self, milestone: Dict) -> bool:

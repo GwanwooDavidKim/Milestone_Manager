@@ -601,7 +601,7 @@ class ZoomableTimelineDialog(ModernDialog):
 
 
 class ClickableKeywordFrame(QFrame):
-    """클릭 가능한 키워드 프레임"""
+    """클릭 가능한 키워드 프레임 - Custom State Pattern"""
     
     clicked = pyqtSignal(str)  # 클릭 시그널
     
@@ -612,11 +612,15 @@ class ClickableKeywordFrame(QFrame):
         
         # 레이아웃 설정
         layout = QHBoxLayout()
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(8, 6, 8, 6)
         
-        # 체크박스 (시각적 표시용)
+        # 체크박스 (시각적 표시만, 클릭 불가)
         self.checkbox = QCheckBox()
+        self.checkbox.setEnabled(False)  # 클릭 불가능하게 설정
         self.checkbox.setStyleSheet("""
+            QCheckBox {
+                spacing: 0px;
+            }
             QCheckBox::indicator {
                 width: 16px;
                 height: 16px;
@@ -627,6 +631,9 @@ class ClickableKeywordFrame(QFrame):
             QCheckBox::indicator:checked {
                 background: #34C759;
                 border: 2px solid #34C759;
+            }
+            QCheckBox::indicator:disabled {
+                opacity: 1.0;
             }
         """)
         layout.addWidget(self.checkbox)
@@ -646,17 +653,21 @@ class ClickableKeywordFrame(QFrame):
         # 마우스 커서 변경
         self.setCursor(Qt.CursorShape.PointingHandCursor)
     
+    def set_selected(self, selected: bool):
+        """선택 상태 설정"""
+        self.is_selected = selected
+        self.checkbox.setChecked(selected)
+        self._update_style()
+    
     def toggle_selected(self):
         """선택 상태 토글"""
-        self.is_selected = not self.is_selected
-        self.checkbox.setChecked(self.is_selected)
-        self._update_style()
+        self.set_selected(not self.is_selected)
     
     def _update_style(self):
         """스타일 업데이트"""
         if self.is_selected:
             self.setStyleSheet("""
-                QFrame {
+                ClickableKeywordFrame {
                     background: #D4EDDA;
                     border: 2px solid #34C759;
                     border-radius: 4px;
@@ -664,20 +675,21 @@ class ClickableKeywordFrame(QFrame):
             """)
         else:
             self.setStyleSheet("""
-                QFrame {
+                ClickableKeywordFrame {
                     background: #f9f9f9;
                     border: 1px solid #e8e8ed;
                     border-radius: 4px;
                 }
-                QFrame:hover {
+                ClickableKeywordFrame:hover {
                     background: #eeeeee;
                     border: 1px solid #d2d2d7;
                 }
             """)
     
     def mousePressEvent(self, event):
-        """마우스 클릭 이벤트"""
+        """마우스 클릭 이벤트 - 프레임 전체 클릭"""
         if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle_selected()
             self.clicked.emit(self.keyword)
         super().mousePressEvent(event)
 
@@ -791,17 +803,11 @@ class KeywordBlock(QWidget):
         for keyword in keywords:
             # 키워드 아이템을 담을 클릭 가능한 컨테이너
             item_frame = ClickableKeywordFrame(keyword)
-            item_frame.clicked.connect(lambda kw=keyword: self._toggle_keyword(kw))
+            # 클릭 시 선택된 키워드 목록 업데이트 및 필터 적용
+            item_frame.clicked.connect(lambda kw=keyword: self._emit_selected_keywords())
             
             self.keyword_layout.addWidget(item_frame)
             self.keyword_checkboxes[keyword] = item_frame
-    
-    def _toggle_keyword(self, keyword: str):
-        """키워드 선택/해제 토글"""
-        if keyword in self.keyword_checkboxes:
-            frame = self.keyword_checkboxes[keyword]
-            frame.toggle_selected()
-            self._emit_selected_keywords()
     
     def _add_keyword(self):
         """키워드 추가"""
