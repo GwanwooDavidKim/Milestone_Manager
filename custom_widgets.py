@@ -713,7 +713,7 @@ class KeywordBlock(QWidget):
     
     def _add_keyword(self):
         """키워드 추가"""
-        text, ok = QInputDialog.getText(self, "키워드 추가", "새 키워드:")
+        text, ok = QInputDialog.getText(self, "키워드 추가", "")
         if ok and text.strip():
             keyword = text.strip()
             if keyword not in self.keyword_checkboxes:
@@ -858,8 +858,8 @@ class ThisMonthBlock(QWidget):
         card_layout.setSpacing(5)
         card_layout.setContentsMargins(10, 10, 10, 10)
         
-        # 제목 (마일스톤 제목)
-        title_label = QLabel(f"📍 {milestone_title}")
+        # 제목 (마일스톤 제목 - 이모티콘 제거)
+        title_label = QLabel(milestone_title)
         title_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #007AFF;")
         card_layout.addWidget(title_label)
         
@@ -878,11 +878,6 @@ class ThisMonthBlock(QWidget):
         detail_label.setStyleSheet("font-size: 12px; color: #1d1d1f;")
         detail_label.setWordWrap(True)
         card_layout.addWidget(detail_label)
-        
-        # 날짜
-        date_label = QLabel(f"📅 {node.get('date', '')}")
-        date_label.setStyleSheet("font-size: 11px; color: #86868b;")
-        card_layout.addWidget(date_label)
         
         card.setLayout(card_layout)
         return card

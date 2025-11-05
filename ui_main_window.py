@@ -109,8 +109,8 @@ class MainWindow(QMainWindow):
             font-size: 18px;
             font-weight: bold;
             color: #1d1d1f;
-            margin-bottom: 3px;
-            padding: 3px;
+            margin-bottom: 0px;
+            padding: 0px;
         """)
         main_layout.addWidget(title_label)
         
@@ -118,11 +118,11 @@ class MainWindow(QMainWindow):
         self.data_status_label = QLabel("⚠️ 데이터 없음")
         self.data_status_label.setStyleSheet("""
             color: #FF9500;
-            font-size: 10px;
-            padding: 3px 6px;
+            font-size: 9px;
+            padding: 2px 4px;
             background: #FFF3E0;
             border-radius: 3px;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         """)
         main_layout.addWidget(self.data_status_label)
         
@@ -563,14 +563,14 @@ class MainWindow(QMainWindow):
                 margin-bottom: 8px;
             """)
         else:
-            self.data_status_label.setText(f"✅ 데이터 로드됨 ({count}개 마일스톤)")
+            self.data_status_label.setText(f"✅ {count}개")
             self.data_status_label.setStyleSheet("""
                 color: #34C759;
-                font-size: 12px;
-                padding: 4px 8px;
+                font-size: 9px;
+                padding: 2px 4px;
                 background: #E8F5E9;
-                border-radius: 4px;
-                margin-bottom: 8px;
+                border-radius: 3px;
+                margin-bottom: 3px;
             """)
     
     def _should_show_milestone(self, milestone: Dict) -> bool:
@@ -815,8 +815,8 @@ class MainWindow(QMainWindow):
         timeline.setFixedHeight(250)
         block_layout.addWidget(timeline)
         
-        self.scroll_layout.addWidget(block)
-        self.milestone_widgets.append(block)
+        # 위젯 반환 (추가는 호출하는 쪽에서)
+        return block
     
     def _toggle_milestone_selection(self, milestone_id: str, is_selected: bool):
         """마일스톤 선택 토글"""
