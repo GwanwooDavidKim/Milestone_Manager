@@ -2,11 +2,13 @@
 
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                               QLineEdit, QPushButton, QComboBox, QTextEdit,
-                              QFileDialog, QColorDialog, QMessageBox)
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor
-from typing import Optional, Dict
+                              QFileDialog, QColorDialog, QMessageBox, QWidget,
+                              QCheckBox, QScrollArea, QInputDialog, QFrame)
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QFont
+from typing import Optional, Dict, List
 import re
+from datetime import datetime
 
 
 class ModernDialog(QDialog):
@@ -596,3 +598,291 @@ class ZoomableTimelineDialog(ModernDialog):
     
     def _fit_in_view(self):
         self.zoom_view.fit_in_view()
+
+
+class KeywordBlock(QWidget):
+    """키워드 필터링 Block 위젯"""
+    
+    keywords_changed = pyqtSignal(list)  # 선택된 키워드 변경 시그널
+    
+    def __init__(self, parent=None, data_manager=None):
+        super().__init__(parent)
+        self.data_manager = data_manager
+        self.keyword_checkboxes = {}
+        
+        self.setStyleSheet("""
+            QWidget {
+                background: white;
+                border: 1px solid #d2d2d7;
+                border-radius: 8px;
+            }
+            QPushButton {
+                background: #007AFF;
+                border: none;
+                border-radius: 6px;
+                color: white;
+                padding: 8px 16px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #1A8CFF;
+            }
+            QPushButton#delete {
+                background: #FF3B30;
+            }
+            QPushButton#delete:hover {
+                background: #FF4D42;
+            }
+            QCheckBox {
+                color: #1d1d1f;
+                font-size: 12px;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border-radius: 4px;
+                border: 2px solid #d2d2d7;
+                background: white;
+            }
+            QCheckBox::indicator:checked {
+                background: #007AFF;
+                border: 2px solid #007AFF;
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        
+        # 제목
+        title_label = QLabel("📌 키워드 필터")
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #1d1d1f; border: none;")
+        layout.addWidget(title_label)
+        
+        # 버튼 영역
+        btn_layout = QHBoxLayout()
+        add_btn = QPushButton("+ 추가")
+        add_btn.clicked.connect(self._add_keyword)
+        btn_layout.addWidget(add_btn)
+        
+        delete_btn = QPushButton("- 삭제")
+        delete_btn.setObjectName("delete")
+        delete_btn.clicked.connect(self._delete_selected_keywords)
+        btn_layout.addWidget(delete_btn)
+        
+        layout.addLayout(btn_layout)
+        
+        # 스크롤 영역
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        
+        self.keyword_container = QWidget()
+        self.keyword_layout = QVBoxLayout()
+        self.keyword_layout.setSpacing(8)
+        self.keyword_layout.setContentsMargins(5, 5, 5, 5)
+        self.keyword_container.setLayout(self.keyword_layout)
+        self.keyword_container.setStyleSheet("background: transparent; border: none;")
+        
+        scroll_area.setWidget(self.keyword_container)
+        layout.addWidget(scroll_area)
+        
+        self.setLayout(layout)
+        self.load_keywords()
+    
+    def load_keywords(self):
+        """키워드 목록 불러오기"""
+        if not self.data_manager:
+            return
+        
+        # 기존 체크박스 제거
+        for checkbox in self.keyword_checkboxes.values():
+            checkbox.deleteLater()
+        self.keyword_checkboxes.clear()
+        
+        keywords = self.data_manager.get_keywords()
+        for keyword in keywords:
+            checkbox = QCheckBox(keyword)
+            checkbox.stateChanged.connect(self._on_keyword_selection_changed)
+            self.keyword_layout.addWidget(checkbox)
+            self.keyword_checkboxes[keyword] = checkbox
+        
+        self.keyword_layout.addStretch()
+    
+    def _add_keyword(self):
+        """키워드 추가"""
+        text, ok = QInputDialog.getText(self, "키워드 추가", "새 키워드:")
+        if ok and text.strip():
+            keyword = text.strip()
+            if keyword not in self.keyword_checkboxes:
+                self.data_manager.add_keyword(keyword)
+                self.load_keywords()
+                self._emit_selected_keywords()
+    
+    def _delete_selected_keywords(self):
+        """선택된 키워드 삭제"""
+        selected = [kw for kw, cb in self.keyword_checkboxes.items() if cb.isChecked()]
+        if selected:
+            reply = QMessageBox.question(
+                self, "키워드 삭제",
+                f"{len(selected)}개의 키워드를 삭제하시겠습니까?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self.data_manager.delete_keywords(selected)
+                self.load_keywords()
+                self._emit_selected_keywords()
+    
+    def _on_keyword_selection_changed(self):
+        """키워드 선택 변경"""
+        self._emit_selected_keywords()
+    
+    def _emit_selected_keywords(self):
+        """선택된 키워드 시그널 발송"""
+        selected = [kw for kw, cb in self.keyword_checkboxes.items() if cb.isChecked()]
+        self.keywords_changed.emit(selected)
+    
+    def get_selected_keywords(self) -> List[str]:
+        """선택된 키워드 목록 반환"""
+        return [kw for kw, cb in self.keyword_checkboxes.items() if cb.isChecked()]
+
+
+class ThisMonthBlock(QWidget):
+    """이번달 일정 관리 Block 위젯"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        self.setStyleSheet("""
+            QWidget {
+                background: white;
+                border: 1px solid #d2d2d7;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #1d1d1f;
+                border: none;
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        
+        # 제목
+        title_label = QLabel("📅 이번달 일정")
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #1d1d1f; border: none;")
+        layout.addWidget(title_label)
+        
+        # 스크롤 영역
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        
+        self.kpi_container = QWidget()
+        self.kpi_layout = QVBoxLayout()
+        self.kpi_layout.setSpacing(10)
+        self.kpi_layout.setContentsMargins(5, 5, 5, 5)
+        self.kpi_container.setLayout(self.kpi_layout)
+        self.kpi_container.setStyleSheet("background: transparent; border: none;")
+        
+        scroll_area.setWidget(self.kpi_container)
+        layout.addWidget(scroll_area)
+        
+        self.setLayout(layout)
+    
+    def update_nodes(self, milestones: List[Dict]):
+        """이번달 노드들로 KPI 차트 업데이트"""
+        # 기존 KPI 카드 제거
+        for i in reversed(range(self.kpi_layout.count())):
+            widget = self.kpi_layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+        
+        # 이번달 추출
+        today = datetime.now()
+        current_year = today.year % 100  # 24, 25 등
+        current_month = today.month
+        
+        this_month_nodes = []
+        for milestone in milestones:
+            milestone_title = milestone.get("title", "")
+            for node in milestone.get("nodes", []):
+                date_str = node.get("date", "")
+                if self._is_this_month(date_str, current_year, current_month):
+                    this_month_nodes.append({
+                        "milestone_title": milestone_title,
+                        "node": node
+                    })
+        
+        # KPI 카드 생성
+        if not this_month_nodes:
+            no_data_label = QLabel("이번달 일정이 없습니다.")
+            no_data_label.setStyleSheet("color: #86868b; font-size: 13px; padding: 20px;")
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.kpi_layout.addWidget(no_data_label)
+        else:
+            for item in this_month_nodes:
+                kpi_card = self._create_kpi_card(item["milestone_title"], item["node"])
+                self.kpi_layout.addWidget(kpi_card)
+        
+        self.kpi_layout.addStretch()
+    
+    def _is_this_month(self, date_str: str, current_year: int, current_month: int) -> bool:
+        """날짜가 이번달인지 확인"""
+        try:
+            parts = date_str.strip().upper().split(".")
+            if len(parts) == 2 and "Q" not in date_str:
+                year = int(parts[0])
+                month = int(parts[1])
+                return year == current_year and month == current_month
+        except:
+            pass
+        return False
+    
+    def _create_kpi_card(self, milestone_title: str, node: Dict) -> QWidget:
+        """KPI 카드 생성"""
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background: #f5f5f7;
+                border: 1px solid #e8e8ed;
+                border-radius: 6px;
+                padding: 10px;
+            }
+        """)
+        
+        card_layout = QVBoxLayout()
+        card_layout.setSpacing(5)
+        card_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # 제목 (마일스톤 제목)
+        title_label = QLabel(f"📍 {milestone_title}")
+        title_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #007AFF;")
+        card_layout.addWidget(title_label)
+        
+        # 내용
+        content = node.get("content", "")
+        memo = node.get("memo", "")
+        
+        if memo:
+            # 내용 | 메모
+            detail_text = f"{content} | {memo}"
+        else:
+            # 내용만
+            detail_text = content
+        
+        detail_label = QLabel(detail_text)
+        detail_label.setStyleSheet("font-size: 12px; color: #1d1d1f;")
+        detail_label.setWordWrap(True)
+        card_layout.addWidget(detail_label)
+        
+        # 날짜
+        date_label = QLabel(f"📅 {node.get('date', '')}")
+        date_label.setStyleSheet("font-size: 11px; color: #86868b;")
+        card_layout.addWidget(date_label)
+        
+        card.setLayout(card_layout)
+        return card
