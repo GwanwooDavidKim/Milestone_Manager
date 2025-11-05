@@ -106,10 +106,11 @@ class MainWindow(QMainWindow):
         # ===== 행1: 제목 + 버튼 툴바 =====
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             color: #1d1d1f;
-            margin-bottom: 0px;
+            margin-top: 0px;
+            margin-bottom: 2px;
             padding: 0px;
         """)
         main_layout.addWidget(title_label)
@@ -118,11 +119,12 @@ class MainWindow(QMainWindow):
         self.data_status_label = QLabel("⚠️ 데이터 없음")
         self.data_status_label.setStyleSheet("""
             color: #FF9500;
-            font-size: 9px;
-            padding: 2px 4px;
+            font-size: 10px;
+            padding: 2px 6px;
             background: #FFF3E0;
             border-radius: 3px;
-            margin-bottom: 3px;
+            margin-top: 0px;
+            margin-bottom: 2px;
         """)
         main_layout.addWidget(self.data_status_label)
         
@@ -563,14 +565,15 @@ class MainWindow(QMainWindow):
                 margin-bottom: 8px;
             """)
         else:
-            self.data_status_label.setText(f"✅ {count}개")
+            self.data_status_label.setText(f"✅ 데이터 로드됨 ({count}개 마일스톤)")
             self.data_status_label.setStyleSheet("""
                 color: #34C759;
-                font-size: 9px;
-                padding: 2px 4px;
+                font-size: 10px;
+                padding: 2px 6px;
                 background: #E8F5E9;
                 border-radius: 3px;
-                margin-bottom: 3px;
+                margin-top: 0px;
+                margin-bottom: 2px;
             """)
     
     def _should_show_milestone(self, milestone: Dict) -> bool:
@@ -789,6 +792,20 @@ class MainWindow(QMainWindow):
         btn_layout.addWidget(zoom_btn)
         
         add_btn = QPushButton("➕ Node 추가")
+        add_btn.setStyleSheet("""
+            QPushButton {
+                background: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #1A8CFF;
+            }
+        """)
         add_btn.clicked.connect(lambda: self._add_node_to_milestone(milestone["id"]))
         btn_layout.addWidget(add_btn)
         
@@ -797,8 +814,21 @@ class MainWindow(QMainWindow):
         edit_btn.clicked.connect(lambda: self._edit_node(milestone["id"]))
         btn_layout.addWidget(edit_btn)
         
-        delete_btn = QPushButton("🗑️ Node 삭제 (Ctrl+D)")
-        delete_btn.setObjectName("danger")
+        delete_btn = QPushButton("🗑️ Node 삭제")
+        delete_btn.setStyleSheet("""
+            QPushButton {
+                background: #FF3B30;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #FF4D42;
+            }
+        """)
         delete_btn.clicked.connect(lambda: self._delete_node(milestone["id"]))
         btn_layout.addWidget(delete_btn)
         
@@ -811,8 +841,8 @@ class MainWindow(QMainWindow):
             milestone_data=milestone,
             on_node_click=lambda nd: self._on_node_selected(milestone["id"], nd)
         )
-        # 메인 UI에서는 250px 고정 높이, 내부 스크롤 가능
-        timeline.setFixedHeight(250)
+        # 메인 UI에서는 450px 고정 높이로 스크롤 없이 전체 표시
+        timeline.setFixedHeight(450)
         block_layout.addWidget(timeline)
         
         # 위젯 반환 (추가는 호출하는 쪽에서)

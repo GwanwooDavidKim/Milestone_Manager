@@ -697,19 +697,59 @@ class KeywordBlock(QWidget):
         if not self.data_manager:
             return
         
-        # 기존 체크박스 제거
-        for checkbox in self.keyword_checkboxes.values():
-            checkbox.deleteLater()
+        # 기존 위젯 제거
+        for i in reversed(range(self.keyword_layout.count())):
+            item = self.keyword_layout.itemAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+        
         self.keyword_checkboxes.clear()
         
         keywords = self.data_manager.get_keywords()
         for keyword in keywords:
+            # 키워드 아이템을 담을 컨테이너 (배경색 구분)
+            item_frame = QFrame()
+            item_frame.setStyleSheet("""
+                QFrame {
+                    background: #f9f9f9;
+                    border: 1px solid #e8e8ed;
+                    border-radius: 4px;
+                    padding: 8px;
+                }
+            """)
+            
+            item_layout = QHBoxLayout()
+            item_layout.setContentsMargins(0, 0, 0, 0)
+            
             checkbox = QCheckBox(keyword)
+            checkbox.setStyleSheet("""
+                QCheckBox {
+                    color: #1d1d1f;
+                    font-size: 12px;
+                    spacing: 8px;
+                }
+                QCheckBox::indicator {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 4px;
+                    border: 2px solid #d2d2d7;
+                    background: white;
+                }
+                QCheckBox::indicator:checked {
+                    background: #007AFF;
+                    border: 2px solid #007AFF;
+                    image: url(none);
+                }
+                QCheckBox::indicator:checked::after {
+                    content: "✓";
+                }
+            """)
             checkbox.stateChanged.connect(self._on_keyword_selection_changed)
-            self.keyword_layout.addWidget(checkbox)
+            item_layout.addWidget(checkbox)
+            
+            item_frame.setLayout(item_layout)
+            self.keyword_layout.addWidget(item_frame)
             self.keyword_checkboxes[keyword] = checkbox
-        
-        self.keyword_layout.addStretch()
     
     def _add_keyword(self):
         """키워드 추가"""
@@ -855,29 +895,29 @@ class ThisMonthBlock(QWidget):
         """)
         
         card_layout = QVBoxLayout()
-        card_layout.setSpacing(5)
+        card_layout.setSpacing(4)
         card_layout.setContentsMargins(10, 10, 10, 10)
         
-        # 제목 (마일스톤 제목 - 이모티콘 제거)
+        # 제목 (마일스톤 제목)
         title_label = QLabel(milestone_title)
         title_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #007AFF;")
         card_layout.addWidget(title_label)
         
-        # 내용
+        # 노드 내용
         content = node.get("content", "")
+        if content:
+            content_label = QLabel(content)
+            content_label.setStyleSheet("font-size: 12px; color: #1d1d1f;")
+            content_label.setWordWrap(True)
+            card_layout.addWidget(content_label)
+        
+        # 메모 (있을 경우만)
         memo = node.get("memo", "")
-        
         if memo:
-            # 내용 | 메모
-            detail_text = f"{content} | {memo}"
-        else:
-            # 내용만
-            detail_text = content
-        
-        detail_label = QLabel(detail_text)
-        detail_label.setStyleSheet("font-size: 12px; color: #1d1d1f;")
-        detail_label.setWordWrap(True)
-        card_layout.addWidget(detail_label)
+            memo_label = QLabel(memo)
+            memo_label.setStyleSheet("font-size: 11px; color: #86868b;")
+            memo_label.setWordWrap(True)
+            card_layout.addWidget(memo_label)
         
         card.setLayout(card_layout)
         return card
