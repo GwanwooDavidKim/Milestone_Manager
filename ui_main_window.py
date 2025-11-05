@@ -42,8 +42,8 @@ class MainWindow(QMainWindow):
                 border: none;
                 border-radius: 4px;
                 color: white;
-                padding: 3px 8px;
-                font-size: 9px;
+                padding: 4px 10px;
+                font-size: 11px;
                 font-weight: bold;
                 min-height: 5px;
             }
@@ -101,12 +101,12 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(15, 2, 15, 15)
+        main_layout.setContentsMargins(15, 5, 15, 15)
         main_layout.setSpacing(1)
 
         # ===== 행1: 제목 + 툴바 (고정 높이 150px) =====
         row1_container = QWidget()
-        row1_container.setFixedHeight(150)
+        row1_container.setFixedHeight(50)
         row1_layout = QVBoxLayout(row1_container)
         row1_layout.setContentsMargins(0, 0, 0, 0)
         row1_layout.setSpacing(1)
@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
 
         title_label = QLabel("Milestone Manager")
         title_label.setStyleSheet("""
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             color: #1d1d1f;
             padding: 0px;
@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
 
         self.milestone_nav_label = QLabel("0 / 0")
         self.milestone_nav_label.setStyleSheet("""
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             color: #1d1d1f;
             padding: 8px 16px;

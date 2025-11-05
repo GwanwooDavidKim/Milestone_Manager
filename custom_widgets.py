@@ -667,7 +667,7 @@ class ClickableKeywordFrame(QFrame):
         """스타일 업데이트"""
         if self.is_selected:
             self.setStyleSheet("""
-                ClickableKeywordFrame {
+                QFrame {
                     background: #D4EDDA;
                     border: 2px solid #34C759;
                     border-radius: 4px;
@@ -675,12 +675,12 @@ class ClickableKeywordFrame(QFrame):
             """)
         else:
             self.setStyleSheet("""
-                ClickableKeywordFrame {
+                QFrame {
                     background: #f9f9f9;
                     border: 1px solid #e8e8ed;
                     border-radius: 4px;
                 }
-                ClickableKeywordFrame:hover {
+                QFrame:hover {
                     background: #eeeeee;
                     border: 1px solid #d2d2d7;
                 }
