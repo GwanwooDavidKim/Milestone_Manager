@@ -638,24 +638,28 @@ class ClickableKeywordFrame(QFrame):
     
     def set_selected(self, selected: bool):
         """선택 상태 설정"""
+        print(f"[DEBUG] set_selected called: {self.keyword} -> {selected}")
         self.is_selected = selected
         self.checkbox.setChecked(selected)
         self._update_style()
     
     def toggle_selected(self):
         """선택 상태 토글"""
+        print(f"[DEBUG] toggle_selected called: {self.keyword}, current: {self.is_selected}")
         self.set_selected(not self.is_selected)
     
     def _update_style(self):
-        """스타일 업데이트 - 전체 스타일시트 재설정 (하위 위젯 포함)"""
+        """스타일 업데이트 - 직접 스타일 지정 (selector 없이)"""
+        print(f"[DEBUG] _update_style called: {self.keyword}, is_selected={self.is_selected}")
         if self.is_selected:
             # 선택됨: 연두색 배경 + 굵은 테두리
             self.setStyleSheet("""
-                QFrame#keyword_frame {
-                    background-color: #D4EDDA;
-                    border: 2px solid #34C759;
-                    border-radius: 4px;
-                }
+                background-color: #D4EDDA;
+                border: 2px solid #34C759;
+                border-radius: 4px;
+            """)
+            # 체크박스 별도 설정
+            self.checkbox.setStyleSheet("""
                 QCheckBox {
                     spacing: 0px;
                 }
@@ -673,25 +677,23 @@ class ClickableKeywordFrame(QFrame):
                 QCheckBox::indicator:disabled {
                     opacity: 1.0;
                 }
-                QLabel {
-                    color: #1d1d1f;
-                    font-size: 12px;
-                    border: none;
-                    background: transparent;
-                }
+            """)
+            # 레이블 별도 설정
+            self.label.setStyleSheet("""
+                color: #1d1d1f;
+                font-size: 12px;
+                border: none;
+                background: transparent;
             """)
         else:
             # 선택 안됨: 회색 배경 + 얇은 테두리
             self.setStyleSheet("""
-                QFrame#keyword_frame {
-                    background-color: #f9f9f9;
-                    border: 1px solid #e8e8ed;
-                    border-radius: 4px;
-                }
-                QFrame#keyword_frame:hover {
-                    background-color: #eeeeee;
-                    border: 1px solid #d2d2d7;
-                }
+                background-color: #f9f9f9;
+                border: 1px solid #e8e8ed;
+                border-radius: 4px;
+            """)
+            # 체크박스 별도 설정
+            self.checkbox.setStyleSheet("""
                 QCheckBox {
                     spacing: 0px;
                 }
@@ -709,17 +711,20 @@ class ClickableKeywordFrame(QFrame):
                 QCheckBox::indicator:disabled {
                     opacity: 1.0;
                 }
-                QLabel {
-                    color: #1d1d1f;
-                    font-size: 12px;
-                    border: none;
-                    background: transparent;
-                }
+            """)
+            # 레이블 별도 설정
+            self.label.setStyleSheet("""
+                color: #1d1d1f;
+                font-size: 12px;
+                border: none;
+                background: transparent;
             """)
     
     def mousePressEvent(self, event):
         """마우스 클릭 이벤트 - 프레임 전체 클릭"""
+        print(f"[DEBUG] mousePressEvent called: {self.keyword}")
         if event.button() == Qt.MouseButton.LeftButton:
+            print(f"[DEBUG] Left click detected on: {self.keyword}")
             self.toggle_selected()
             self.clicked.emit(self.keyword)
         super().mousePressEvent(event)
