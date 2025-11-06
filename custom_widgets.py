@@ -610,6 +610,10 @@ class ClickableKeywordFrame(QFrame):
         self.keyword = keyword
         self.is_selected = False
         
+        # 프레임 ID 설정 (스타일시트 selector용)
+        self.setObjectName("keyword_frame")
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+        
         # 레이아웃 설정
         layout = QHBoxLayout()
         layout.setContentsMargins(8, 6, 8, 6)
@@ -617,37 +621,16 @@ class ClickableKeywordFrame(QFrame):
         # 체크박스 (시각적 표시만, 클릭 불가)
         self.checkbox = QCheckBox()
         self.checkbox.setEnabled(False)  # 클릭 불가능하게 설정
-        self.checkbox.setStyleSheet("""
-            QCheckBox {
-                spacing: 0px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border-radius: 4px;
-                border: 2px solid #d2d2d7;
-                background: white;
-            }
-            QCheckBox::indicator:checked {
-                background: #34C759;
-                border: 2px solid #34C759;
-            }
-            QCheckBox::indicator:disabled {
-                opacity: 1.0;
-            }
-        """)
         layout.addWidget(self.checkbox)
         
         # 키워드 레이블
         self.label = QLabel(keyword)
-        self.label.setStyleSheet("""
-            color: #1d1d1f;
-            font-size: 12px;
-        """)
         layout.addWidget(self.label)
         layout.addStretch()
         
         self.setLayout(layout)
+        
+        # 초기 스타일 적용 (_update_style에서 모든 스타일 설정)
         self._update_style()
         
         # 마우스 커서 변경
@@ -664,25 +647,73 @@ class ClickableKeywordFrame(QFrame):
         self.set_selected(not self.is_selected)
     
     def _update_style(self):
-        """스타일 업데이트"""
+        """스타일 업데이트 - 전체 스타일시트 재설정 (하위 위젯 포함)"""
         if self.is_selected:
+            # 선택됨: 연두색 배경 + 굵은 테두리
             self.setStyleSheet("""
-                QFrame {
-                    background: #D4EDDA;
+                QFrame#keyword_frame {
+                    background-color: #D4EDDA;
                     border: 2px solid #34C759;
                     border-radius: 4px;
                 }
+                QCheckBox {
+                    spacing: 0px;
+                }
+                QCheckBox::indicator {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 4px;
+                    border: 2px solid #d2d2d7;
+                    background: white;
+                }
+                QCheckBox::indicator:checked {
+                    background: #34C759;
+                    border: 2px solid #34C759;
+                }
+                QCheckBox::indicator:disabled {
+                    opacity: 1.0;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 12px;
+                    border: none;
+                    background: transparent;
+                }
             """)
         else:
+            # 선택 안됨: 회색 배경 + 얇은 테두리
             self.setStyleSheet("""
-                QFrame {
-                    background: #f9f9f9;
+                QFrame#keyword_frame {
+                    background-color: #f9f9f9;
                     border: 1px solid #e8e8ed;
                     border-radius: 4px;
                 }
-                QFrame:hover {
-                    background: #eeeeee;
+                QFrame#keyword_frame:hover {
+                    background-color: #eeeeee;
                     border: 1px solid #d2d2d7;
+                }
+                QCheckBox {
+                    spacing: 0px;
+                }
+                QCheckBox::indicator {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 4px;
+                    border: 2px solid #d2d2d7;
+                    background: white;
+                }
+                QCheckBox::indicator:checked {
+                    background: #34C759;
+                    border: 2px solid #34C759;
+                }
+                QCheckBox::indicator:disabled {
+                    opacity: 1.0;
+                }
+                QLabel {
+                    color: #1d1d1f;
+                    font-size: 12px;
+                    border: none;
+                    background: transparent;
                 }
             """)
     
