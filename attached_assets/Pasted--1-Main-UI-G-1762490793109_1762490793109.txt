@@ -1,0 +1,55 @@
+내가 테스트한 동작에 대한 로그를 남겨줄테니까 잘 분석해서 원인을 찾아봐 
+
+지금 결과는 계속 안되고 있으니까 로그 확인해서 분석해봐.
+
+1. Main UI 켜지자마자 처음으로 G8.6이라는 키워드 부분 클릭 
+
+[DEBUG] _update_style called: G8,6, is_selected=False
+[DEBUG] _update_style called: 테스트, is_selected=False
+[DEBUG] _update_style called: 1, is_selected=False     
+[DEBUG] _update_style called: 2, is_selected=False     
+[DEBUG] mousePressEvent called: G8,6
+[DEBUG] Left click detected on: G8,6
+[DEBUG] toggle_selected called: G8,6, current: False
+[DEBUG] set_selected called: G8,6 -> True
+[DEBUG] _update_style called: G8,6, is_selected=True
+[DEBUG] _update_style called: G8,6, is_selected=False
+[DEBUG] _update_style called: 테스트, is_selected=False
+[DEBUG] _update_style called: 1, is_selected=False
+[DEBUG] _update_style called: 2, is_selected=False
+
+2. 다른 테스트 라는 키워드를 클릭
+
+[DEBUG] mousePressEvent called: 테스트
+[DEBUG] Left click detected on: 테스트
+[DEBUG] toggle_selected called: 테스트, current: False
+[DEBUG] set_selected called: 테스트 -> True
+[DEBUG] _update_style called: 테스트, is_selected=True
+[DEBUG] _update_style called: G8,6, is_selected=False
+[DEBUG] _update_style called: 테스트, is_selected=False
+[DEBUG] _update_style called: 1, is_selected=False
+[DEBUG] _update_style called: 2, is_selected=False
+
+3. G8.6이라는 키워드 다시 클릭 
+
+[DEBUG] mousePressEvent called: G8,6
+[DEBUG] Left click detected on: G8,6
+[DEBUG] toggle_selected called: G8,6, current: False
+[DEBUG] set_selected called: G8,6 -> True
+[DEBUG] _update_style called: G8,6, is_selected=True
+[DEBUG] _update_style called: G8,6, is_selected=False
+[DEBUG] _update_style called: 테스트, is_selected=False
+[DEBUG] _update_style called: 1, is_selected=False
+[DEBUG] _update_style called: 2, is_selected=False
+
+4. 테스트 라는 키워드 다시 클릭
+
+[DEBUG] mousePressEvent called: 테스트
+[DEBUG] Left click detected on: 테스트
+[DEBUG] toggle_selected called: 테스트, current: False
+[DEBUG] set_selected called: 테스트 -> True
+[DEBUG] _update_style called: 테스트, is_selected=True
+[DEBUG] _update_style called: G8,6, is_selected=False
+[DEBUG] _update_style called: 테스트, is_selected=False
+[DEBUG] _update_style called: 1, is_selected=False
+[DEBUG] _update_style called: 2, is_selected=False

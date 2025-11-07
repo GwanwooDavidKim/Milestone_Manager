@@ -823,9 +823,17 @@ class KeywordBlock(QWidget):
         self.load_keywords()
     
     def load_keywords(self):
-        """키워드 목록 불러오기"""
+        """키워드 목록 불러오기 - 선택 상태 보존"""
         if not self.data_manager:
             return
+        
+        # ✅ 기존 선택 상태 저장
+        selected_keywords = set()
+        for kw, frame in self.keyword_checkboxes.items():
+            if frame.is_selected:
+                selected_keywords.add(kw)
+        
+        print(f"[DEBUG] load_keywords - 보존할 선택 상태: {selected_keywords}")
         
         # 기존 위젯 제거
         for i in reversed(range(self.keyword_layout.count())):
@@ -839,6 +847,12 @@ class KeywordBlock(QWidget):
         for keyword in keywords:
             # 키워드 아이템을 담을 클릭 가능한 컨테이너
             item_frame = ClickableKeywordFrame(keyword)
+            
+            # ✅ 선택 상태 복원
+            if keyword in selected_keywords:
+                item_frame.set_selected(True)
+                print(f"[DEBUG] 선택 상태 복원: {keyword}")
+            
             # 클릭 시 선택된 키워드 목록 업데이트 및 필터 적용
             item_frame.clicked.connect(lambda kw=keyword: self._emit_selected_keywords())
             
