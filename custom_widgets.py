@@ -638,19 +638,16 @@ class ClickableKeywordFrame(QFrame):
     
     def set_selected(self, selected: bool):
         """선택 상태 설정"""
-        print(f"[DEBUG] set_selected called: {self.keyword} -> {selected}")
         self.is_selected = selected
         self.checkbox.setChecked(selected)
         self._update_style()
     
     def toggle_selected(self):
         """선택 상태 토글"""
-        print(f"[DEBUG] toggle_selected called: {self.keyword}, current: {self.is_selected}")
         self.set_selected(not self.is_selected)
     
     def _update_style(self):
         """스타일 업데이트 - 직접 스타일 지정 (selector 없이)"""
-        print(f"[DEBUG] _update_style called: {self.keyword}, is_selected={self.is_selected}")
         if self.is_selected:
             # 선택됨: 연두색 배경 + 굵은 테두리
             self.setStyleSheet("""
@@ -722,9 +719,7 @@ class ClickableKeywordFrame(QFrame):
     
     def mousePressEvent(self, event):
         """마우스 클릭 이벤트 - 프레임 전체 클릭"""
-        print(f"[DEBUG] mousePressEvent called: {self.keyword}")
         if event.button() == Qt.MouseButton.LeftButton:
-            print(f"[DEBUG] Left click detected on: {self.keyword}")
             self.toggle_selected()
             self.clicked.emit(self.keyword)
         super().mousePressEvent(event)
@@ -831,10 +826,7 @@ class KeywordBlock(QWidget):
         selected_keywords = set()
         for kw, frame in self.keyword_checkboxes.items():
             if frame.is_selected:
-                selected_keywords.add(kw)
-        
-        print(f"[DEBUG] load_keywords - 보존할 선택 상태: {selected_keywords}")
-        
+                selected_keywords.add(kw)        
         # 기존 위젯 제거
         for i in reversed(range(self.keyword_layout.count())):
             item = self.keyword_layout.itemAt(i)
@@ -850,9 +842,7 @@ class KeywordBlock(QWidget):
             
             # ✅ 선택 상태 복원
             if keyword in selected_keywords:
-                item_frame.set_selected(True)
-                print(f"[DEBUG] 선택 상태 복원: {keyword}")
-            
+                item_frame.set_selected(True)            
             # 클릭 시 선택된 키워드 목록 업데이트 및 필터 적용
             item_frame.clicked.connect(lambda kw=keyword: self._emit_selected_keywords())
             
