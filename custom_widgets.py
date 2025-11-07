@@ -998,7 +998,7 @@ class ClickableKPICard(QFrame):
         self.node = node
         
         # ✅ 고정 크기 확대 (가독성 향상)
-        self.setFixedSize(280, 160)
+        self.setFixedSize(450, 160)
         
         self.setStyleSheet("""
             QFrame {
@@ -1022,7 +1022,7 @@ class ClickableKPICard(QFrame):
         title_label.setWordWrap(False)
         title_label.setMaximumHeight(18)
         fm = title_label.fontMetrics()
-        elided_title = fm.elidedText(milestone_title, Qt.TextElideMode.ElideRight, 256)
+        elided_title = fm.elidedText(milestone_title, Qt.TextElideMode.ElideRight, 426)
         title_label.setText(elided_title)
         card_layout.addWidget(title_label)
         
@@ -1034,7 +1034,7 @@ class ClickableKPICard(QFrame):
             content_label.setWordWrap(False)
             content_label.setMaximumHeight(17)
             fm_content = content_label.fontMetrics()
-            elided_content = fm_content.elidedText(content, Qt.TextElideMode.ElideRight, 256)
+            elided_content = fm_content.elidedText(content, Qt.TextElideMode.ElideRight, 426)
             content_label.setText(elided_content)
             card_layout.addWidget(content_label)
         
@@ -1066,8 +1066,8 @@ class ClickableKPICard(QFrame):
         dialog.setModal(True)
         dialog.setFixedSize(550, 500)
         
-        # 밝은 배경색 설정
-        dialog.setStyleSheet("QDialog { background: white; }")
+        # KPI Card와 동일한 배경색 설정
+        dialog.setStyleSheet("QDialog { background: #f5f5f7; }")
         
         layout = QVBoxLayout()
         layout.setSpacing(15)
@@ -1135,8 +1135,8 @@ class ClickableKPICard(QFrame):
         if memo:
             memo_scroll = QScrollArea()
             memo_scroll.setWidgetResizable(True)
-            memo_scroll.setStyleSheet("QScrollArea { border: 1px solid #e8e8ed; border-radius: 4px; background: #f9f9f9; }")
-            memo_scroll.setFixedHeight(120)
+            memo_scroll.setStyleSheet("QScrollArea { border: 1px solid #e8e8ed; border-radius: 4px; background: white; }")
+            memo_scroll.setFixedHeight(180)
             
             memo_text = QLabel(memo)
             memo_text.setStyleSheet("font-size: 13px; color: #86868b; padding: 10px;")
