@@ -208,14 +208,14 @@ class MainWindow(QMainWindow):
         # 키워드 Block - 고정 높이
         self.keyword_block = KeywordBlock(self, self.data_manager)
         self.keyword_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
-        self.keyword_block.setFixedHeight(300)  # 고정 높이
+        self.keyword_block.setFixedHeight(450)  # 고정 높이
         self.keyword_block.keywords_changed.connect(
             self._on_keyword_filter_changed)
         row2_layout.addWidget(self.keyword_block)
 
         # 이번달 일정 Block - 고정 높이
         self.this_month_block = ThisMonthBlock(self)
-        self.this_month_block.setFixedHeight(300)  # 고정 높이
+        self.this_month_block.setFixedHeight(450)  # 고정 높이
         row2_layout.addWidget(self.this_month_block, stretch=1)
 
         main_layout.addLayout(row2_layout, stretch=0)
@@ -264,7 +264,7 @@ class MainWindow(QMainWindow):
         self.milestone_layout.setContentsMargins(0, 0, 0, 0)
         self.milestone_layout.setSpacing(0)
 
-        self.milestone_container.setFixedHeight(600)
+        self.milestone_container.setFixedHeight(450)
 
         main_layout.addWidget(self.milestone_container)
 
@@ -858,8 +858,8 @@ class MainWindow(QMainWindow):
                                   milestone_data=milestone,
                                   on_node_click=lambda nd: self.
                                   _on_node_selected(milestone["id"], nd))
-        # 메인 UI에서는 500px 고정 높이로 스크롤 없이 전체 표시
-        timeline.setFixedHeight(500)
+        # 메인 UI에서는 350px 고정 높이로 스크롤 없이 전체 표시
+        timeline.setFixedHeight(350)
         block_layout.addWidget(timeline)
 
         # 위젯 반환 (추가는 호출하는 쪽에서)

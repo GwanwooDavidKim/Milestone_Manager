@@ -1,6 +1,6 @@
 """커스텀 위젯 모듈 - 라이트 모드 다이얼로그"""
 
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, 
                               QLineEdit, QPushButton, QComboBox, QTextEdit,
                               QFileDialog, QColorDialog, QMessageBox, QWidget,
                               QCheckBox, QScrollArea, QInputDialog, QFrame)
@@ -894,7 +894,7 @@ class KeywordBlock(QWidget):
 
 
 class ThisMonthBlock(QWidget):
-    """이번달 일정 관리 Block 위젯"""
+    """이번달 일정 관리 Block 위젯 - 3열 그리드"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -926,7 +926,8 @@ class ThisMonthBlock(QWidget):
         scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         
         self.kpi_container = QWidget()
-        self.kpi_layout = QVBoxLayout()
+        # ✅ 3열 그리드 레이아웃으로 변경
+        self.kpi_layout = QGridLayout()
         self.kpi_layout.setSpacing(10)
         self.kpi_layout.setContentsMargins(5, 5, 5, 5)
         self.kpi_container.setLayout(self.kpi_layout)
@@ -938,12 +939,12 @@ class ThisMonthBlock(QWidget):
         self.setLayout(layout)
     
     def update_nodes(self, milestones: List[Dict]):
-        """이번달 노드들로 KPI 차트 업데이트"""
+        """이번달 노드들로 KPI 차트 업데이트 - 3열 그리드"""
         # 기존 KPI 카드 제거
-        for i in reversed(range(self.kpi_layout.count())):
-            widget = self.kpi_layout.itemAt(i).widget()
-            if widget:
-                widget.deleteLater()
+        while self.kpi_layout.count():
+            item = self.kpi_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         
         # 이번달 추출
         today = datetime.now()
@@ -961,18 +962,24 @@ class ThisMonthBlock(QWidget):
                         "node": node
                     })
         
-        # KPI 카드 생성
+        # KPI 카드 생성 - 3열 그리드로 배치
         if not this_month_nodes:
             no_data_label = QLabel("이번달 일정이 없습니다.")
             no_data_label.setStyleSheet("color: #86868b; font-size: 13px; padding: 20px;")
             no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.kpi_layout.addWidget(no_data_label)
+            self.kpi_layout.addWidget(no_data_label, 0, 0, 1, 3)  # 3열 전체
         else:
+            row = 0
+            col = 0
             for item in this_month_nodes:
                 kpi_card = self._create_kpi_card(item["milestone_title"], item["node"])
-                self.kpi_layout.addWidget(kpi_card)
-        
-        self.kpi_layout.addStretch()
+                self.kpi_layout.addWidget(kpi_card, row, col)
+                
+                # 다음 위치 계산 (3열)
+                col += 1
+                if col >= 3:
+                    col = 0
+                    row += 1
     
     def _is_this_month(self, date_str: str, current_year: int, current_month: int) -> bool:
         """날짜가 이번달인지 확인"""
@@ -987,14 +994,31 @@ class ThisMonthBlock(QWidget):
         return False
     
     def _create_kpi_card(self, milestone_title: str, node: Dict) -> QWidget:
-        """KPI 카드 생성"""
-        card = QFrame()
-        card.setStyleSheet("""
+        """KPI 카드 생성 - 클릭 가능, 고정 크기, 메모 2줄"""
+        card = ClickableKPICard(milestone_title, node)
+        return card
+
+
+class ClickableKPICard(QFrame):
+    """클릭 가능한 KPI 카드 - 고정 크기, 메모 2줄 제한"""
+    
+    def __init__(self, milestone_title: str, node: Dict, parent=None):
+        super().__init__(parent)
+        self.milestone_title = milestone_title
+        self.node = node
+        
+        # ✅ 고정 크기 (정사각형에 가깝게)
+        self.setFixedSize(200, 120)
+        
+        self.setStyleSheet("""
             QFrame {
                 background: #f5f5f7;
                 border: 1px solid #e8e8ed;
                 border-radius: 6px;
-                padding: 10px;
+            }
+            QFrame:hover {
+                background: #eeeeee;
+                border: 1px solid #007AFF;
             }
         """)
         
@@ -1002,26 +1026,156 @@ class ThisMonthBlock(QWidget):
         card_layout.setSpacing(4)
         card_layout.setContentsMargins(10, 10, 10, 10)
         
-        # 제목 (마일스톤 제목)
+        # 제목 (마일스톤 제목) - 1줄
         title_label = QLabel(milestone_title)
-        title_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #007AFF;")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #007AFF;")
+        title_label.setWordWrap(False)
+        title_label.setMaximumHeight(15)
+        fm = title_label.fontMetrics()
+        elided_title = fm.elidedText(milestone_title, Qt.TextElideMode.ElideRight, 180)
+        title_label.setText(elided_title)
         card_layout.addWidget(title_label)
         
-        # 노드 내용
+        # 노드 내용 - 1줄
         content = node.get("content", "")
         if content:
             content_label = QLabel(content)
-            content_label.setStyleSheet("font-size: 12px; color: #1d1d1f;")
-            content_label.setWordWrap(True)
+            content_label.setStyleSheet("font-size: 11px; color: #1d1d1f;")
+            content_label.setWordWrap(False)
+            content_label.setMaximumHeight(15)
+            fm_content = content_label.fontMetrics()
+            elided_content = fm_content.elidedText(content, Qt.TextElideMode.ElideRight, 180)
+            content_label.setText(elided_content)
             card_layout.addWidget(content_label)
         
-        # 메모 (있을 경우만)
+        # ✅ 메모 - 2줄로 제한
         memo = node.get("memo", "")
         if memo:
             memo_label = QLabel(memo)
-            memo_label.setStyleSheet("font-size: 11px; color: #86868b;")
+            memo_label.setStyleSheet("font-size: 10px; color: #86868b;")
             memo_label.setWordWrap(True)
+            memo_label.setMaximumHeight(32)  # 약 2줄 높이
             card_layout.addWidget(memo_label)
         
-        card.setLayout(card_layout)
-        return card
+        card_layout.addStretch()
+        self.setLayout(card_layout)
+        
+        # ✅ 클릭 가능하게 설정
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+    
+    def mousePressEvent(self, event):
+        """클릭 시 상세 정보 팝업"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._show_detail_dialog()
+        super().mousePressEvent(event)
+    
+    def _show_detail_dialog(self):
+        """노드 상세 정보 팝업 다이얼로그"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("📋 노드 상세 정보")
+        dialog.setModal(True)
+        dialog.setFixedSize(450, 400)
+        
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # 마일스톤 제목
+        milestone_label = QLabel(f"📌 {self.milestone_title}")
+        milestone_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #007AFF;")
+        layout.addWidget(milestone_label)
+        
+        # 구분선
+        line1 = QFrame()
+        line1.setFrameShape(QFrame.Shape.HLine)
+        line1.setStyleSheet("background: #d2d2d7;")
+        layout.addWidget(line1)
+        
+        # 노드 정보 그리드
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(10)
+        
+        # 모양 + 색상
+        shape_color_layout = QHBoxLayout()
+        shape = self.node.get("shape", "circle")
+        color = self.node.get("color", "#007AFF")
+        shape2 = self.node.get("shape2", "")
+        color2 = self.node.get("color2", "")
+        
+        shape_label = QLabel(f"🔸 모양: {shape}")
+        shape_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+        shape_color_layout.addWidget(shape_label)
+        
+        color_box = QLabel("   ")
+        color_box.setStyleSheet(f"background: {color}; border: 1px solid #d2d2d7; border-radius: 4px;")
+        color_box.setFixedSize(30, 20)
+        shape_color_layout.addWidget(color_box)
+        
+        if shape2:
+            shape2_label = QLabel(f"+ {shape2}")
+            shape2_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+            shape_color_layout.addWidget(shape2_label)
+            
+            color2_box = QLabel("   ")
+            color2_box.setStyleSheet(f"background: {color2}; border: 1px solid #d2d2d7; border-radius: 4px;")
+            color2_box.setFixedSize(30, 20)
+            shape_color_layout.addWidget(color2_box)
+        
+        shape_color_layout.addStretch()
+        info_layout.addLayout(shape_color_layout)
+        
+        # 날짜
+        date = self.node.get("date", "")
+        date_label = QLabel(f"📅 날짜: {date}")
+        date_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+        info_layout.addWidget(date_label)
+        
+        # 내용
+        content = self.node.get("content", "")
+        content_label = QLabel(f"📝 내용:\n{content}")
+        content_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+        content_label.setWordWrap(True)
+        info_layout.addWidget(content_label)
+        
+        # 메모
+        memo = self.node.get("memo", "")
+        if memo:
+            memo_scroll = QScrollArea()
+            memo_scroll.setWidgetResizable(True)
+            memo_scroll.setStyleSheet("QScrollArea { border: 1px solid #e8e8ed; border-radius: 4px; background: #f9f9f9; }")
+            memo_scroll.setFixedHeight(100)
+            
+            memo_text = QLabel(memo)
+            memo_text.setStyleSheet("font-size: 12px; color: #86868b; padding: 10px;")
+            memo_text.setWordWrap(True)
+            memo_scroll.setWidget(memo_text)
+            
+            memo_title = QLabel("💬 메모:")
+            memo_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #1d1d1f;")
+            info_layout.addWidget(memo_title)
+            info_layout.addWidget(memo_scroll)
+        
+        layout.addLayout(info_layout)
+        layout.addStretch()
+        
+        # 닫기 버튼
+        close_btn = QPushButton("닫기")
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 20px;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #1A8CFF;
+            }
+        """)
+        close_btn.clicked.connect(dialog.accept)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        dialog.setLayout(layout)
+        dialog.exec()
