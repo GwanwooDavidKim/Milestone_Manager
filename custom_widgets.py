@@ -918,7 +918,7 @@ class ThisMonthBlock(QWidget):
         self.kpi_container = QWidget()
         # ✅ 3열 그리드 레이아웃으로 변경
         self.kpi_layout = QGridLayout()
-        self.kpi_layout.setSpacing(10)
+        self.kpi_layout.setSpacing(8)
         self.kpi_layout.setContentsMargins(5, 5, 5, 5)
         self.kpi_container.setLayout(self.kpi_layout)
         self.kpi_container.setStyleSheet("background: transparent; border: none;")
@@ -997,8 +997,8 @@ class ClickableKPICard(QFrame):
         self.milestone_title = milestone_title
         self.node = node
         
-        # ✅ 고정 크기 (정사각형에 가깝게)
-        self.setFixedSize(200, 120)
+        # ✅ 고정 크기 확대 (가독성 향상)
+        self.setFixedSize(280, 160)
         
         self.setStyleSheet("""
             QFrame {
@@ -1013,16 +1013,16 @@ class ClickableKPICard(QFrame):
         """)
         
         card_layout = QVBoxLayout()
-        card_layout.setSpacing(4)
-        card_layout.setContentsMargins(10, 10, 10, 10)
+        card_layout.setSpacing(5)
+        card_layout.setContentsMargins(12, 12, 12, 12)
         
         # 제목 (마일스톤 제목) - 1줄
         title_label = QLabel(milestone_title)
-        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #007AFF;")
+        title_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #007AFF;")
         title_label.setWordWrap(False)
-        title_label.setMaximumHeight(15)
+        title_label.setMaximumHeight(18)
         fm = title_label.fontMetrics()
-        elided_title = fm.elidedText(milestone_title, Qt.TextElideMode.ElideRight, 180)
+        elided_title = fm.elidedText(milestone_title, Qt.TextElideMode.ElideRight, 256)
         title_label.setText(elided_title)
         card_layout.addWidget(title_label)
         
@@ -1030,11 +1030,11 @@ class ClickableKPICard(QFrame):
         content = node.get("content", "")
         if content:
             content_label = QLabel(content)
-            content_label.setStyleSheet("font-size: 11px; color: #1d1d1f;")
+            content_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
             content_label.setWordWrap(False)
-            content_label.setMaximumHeight(15)
+            content_label.setMaximumHeight(17)
             fm_content = content_label.fontMetrics()
-            elided_content = fm_content.elidedText(content, Qt.TextElideMode.ElideRight, 180)
+            elided_content = fm_content.elidedText(content, Qt.TextElideMode.ElideRight, 256)
             content_label.setText(elided_content)
             card_layout.addWidget(content_label)
         
@@ -1042,9 +1042,9 @@ class ClickableKPICard(QFrame):
         memo = node.get("memo", "")
         if memo:
             memo_label = QLabel(memo)
-            memo_label.setStyleSheet("font-size: 10px; color: #86868b;")
+            memo_label.setStyleSheet("font-size: 12px; color: #86868b;")
             memo_label.setWordWrap(True)
-            memo_label.setMaximumHeight(32)  # 약 2줄 높이
+            memo_label.setMaximumHeight(40)  # 약 2줄 높이
             card_layout.addWidget(memo_label)
         
         card_layout.addStretch()
@@ -1062,17 +1062,20 @@ class ClickableKPICard(QFrame):
     def _show_detail_dialog(self):
         """노드 상세 정보 팝업 다이얼로그"""
         dialog = QDialog(self)
-        dialog.setWindowTitle("📋 노드 상세 정보")
+        dialog.setWindowTitle("노드 상세 정보")
         dialog.setModal(True)
-        dialog.setFixedSize(450, 400)
+        dialog.setFixedSize(550, 500)
+        
+        # 밝은 배경색 설정
+        dialog.setStyleSheet("QDialog { background: white; }")
         
         layout = QVBoxLayout()
         layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(25, 25, 25, 25)
         
         # 마일스톤 제목
-        milestone_label = QLabel(f"📌 {self.milestone_title}")
-        milestone_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #007AFF;")
+        milestone_label = QLabel(self.milestone_title)
+        milestone_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #007AFF;")
         layout.addWidget(milestone_label)
         
         # 구분선
@@ -1092,8 +1095,8 @@ class ClickableKPICard(QFrame):
         shape2 = self.node.get("shape2", "")
         color2 = self.node.get("color2", "")
         
-        shape_label = QLabel(f"🔸 모양: {shape}")
-        shape_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+        shape_label = QLabel(f"모양: {shape}")
+        shape_label.setStyleSheet("font-size: 14px; color: #1d1d1f;")
         shape_color_layout.addWidget(shape_label)
         
         color_box = QLabel("   ")
@@ -1103,7 +1106,7 @@ class ClickableKPICard(QFrame):
         
         if shape2:
             shape2_label = QLabel(f"+ {shape2}")
-            shape2_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+            shape2_label.setStyleSheet("font-size: 14px; color: #1d1d1f;")
             shape_color_layout.addWidget(shape2_label)
             
             color2_box = QLabel("   ")
@@ -1117,13 +1120,13 @@ class ClickableKPICard(QFrame):
         # 날짜
         date = self.node.get("date", "")
         date_label = QLabel(f"📅 날짜: {date}")
-        date_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+        date_label.setStyleSheet("font-size: 14px; color: #1d1d1f;")
         info_layout.addWidget(date_label)
         
         # 내용
         content = self.node.get("content", "")
         content_label = QLabel(f"📝 내용:\n{content}")
-        content_label.setStyleSheet("font-size: 13px; color: #1d1d1f;")
+        content_label.setStyleSheet("font-size: 14px; color: #1d1d1f;")
         content_label.setWordWrap(True)
         info_layout.addWidget(content_label)
         
@@ -1133,15 +1136,15 @@ class ClickableKPICard(QFrame):
             memo_scroll = QScrollArea()
             memo_scroll.setWidgetResizable(True)
             memo_scroll.setStyleSheet("QScrollArea { border: 1px solid #e8e8ed; border-radius: 4px; background: #f9f9f9; }")
-            memo_scroll.setFixedHeight(100)
+            memo_scroll.setFixedHeight(120)
             
             memo_text = QLabel(memo)
-            memo_text.setStyleSheet("font-size: 12px; color: #86868b; padding: 10px;")
+            memo_text.setStyleSheet("font-size: 13px; color: #86868b; padding: 10px;")
             memo_text.setWordWrap(True)
             memo_scroll.setWidget(memo_text)
             
             memo_title = QLabel("💬 메모:")
-            memo_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #1d1d1f;")
+            memo_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #1d1d1f;")
             info_layout.addWidget(memo_title)
             info_layout.addWidget(memo_scroll)
         
