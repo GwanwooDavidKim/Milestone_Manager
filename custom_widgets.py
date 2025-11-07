@@ -1044,7 +1044,7 @@ class ClickableKPICard(QFrame):
             memo_label = QLabel(memo)
             memo_label.setStyleSheet("font-size: 12px; color: #86868b;")
             memo_label.setWordWrap(True)
-            memo_label.setMaximumHeight(40)  # 약 2줄 높이
+            memo_label.setMaximumHeight(80)  # 약 2줄 높이
             card_layout.addWidget(memo_label)
         
         card_layout.addStretch()
