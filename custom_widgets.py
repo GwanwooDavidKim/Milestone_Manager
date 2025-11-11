@@ -1035,13 +1035,17 @@ class ClickableMemoArea(QScrollArea):
             clipboard = QApplication.clipboard()
             clipboard.setText(self.memo_text)
             
-            # 시각적 피드백
+            # 시각적 피드백 - 텍스트 색상 변경
             self.memo_label.setStyleSheet(
                 "font-size: 13px; color: #007AFF; padding: 10px; font-weight: bold;"
             )
             QTimer.singleShot(500, lambda: self.memo_label.setStyleSheet(
                 "font-size: 13px; color: #86868b; padding: 10px;"
             ))
+            
+            # 툴팁 피드백 - "복사됨!" 표시 후 원래대로
+            self.setToolTip("✅ 복사됨!")
+            QTimer.singleShot(1500, lambda: self.setToolTip("클릭하여 메모를 클립보드에 복사"))
         super().mousePressEvent(event)
 
 
