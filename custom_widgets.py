@@ -995,6 +995,50 @@ class ThisMonthBlock(QWidget):
         return card
 
 
+class ClickableMemoArea(QScrollArea):
+    """클릭 시 메모 내용을 클립보드에 복사하는 위젯"""
+    
+    def __init__(self, memo_text: str, parent=None):
+        super().__init__(parent)
+        self.memo_text = memo_text
+        
+        self.setWidgetResizable(True)
+        self.setStyleSheet("""
+            QScrollArea { 
+                border: 1px solid #e8e8ed; 
+                border-radius: 4px; 
+                background: white; 
+            }
+            QScrollArea:hover {
+                border: 2px solid #007AFF;
+            }
+        """)
+        
+        self.memo_label = QLabel(memo_text)
+        self.memo_label.setStyleSheet("font-size: 13px; color: #86868b; padding: 10px;")
+        self.memo_label.setWordWrap(True)
+        self.setWidget(self.memo_label)
+        
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip("클릭하여 메모를 클립보드에 복사")
+    
+    def mousePressEvent(self, event):
+        """클릭 시 메모 내용을 클립보드에 복사"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            from PyQt6.QtWidgets import QApplication
+            clipboard = QApplication.clipboard()
+            clipboard.setText(self.memo_text)
+            
+            # 시각적 피드백
+            self.memo_label.setStyleSheet(
+                "font-size: 13px; color: #007AFF; padding: 10px; font-weight: bold;"
+            )
+            QTimer.singleShot(500, lambda: self.memo_label.setStyleSheet(
+                "font-size: 13px; color: #86868b; padding: 10px;"
+            ))
+        super().mousePressEvent(event)
+
+
 class ClickableKPICard(QFrame):
     """클릭 가능한 KPI 카드 - 고정 크기, 메모 2줄 제한"""
     
@@ -1140,22 +1184,16 @@ class ClickableKPICard(QFrame):
         content_label.setWordWrap(True)
         info_layout.addWidget(content_label)
         
-        # 메모
+        # 메모 - 클릭 시 복사 가능
         memo = self.node.get("memo", "")
         if memo:
-            memo_scroll = QScrollArea()
-            memo_scroll.setWidgetResizable(True)
-            memo_scroll.setStyleSheet("QScrollArea { border: 1px solid #e8e8ed; border-radius: 4px; background: white; }")
-            memo_scroll.setFixedHeight(180)
-            
-            memo_text = QLabel(memo)
-            memo_text.setStyleSheet("font-size: 13px; color: #86868b; padding: 10px;")
-            memo_text.setWordWrap(True)
-            memo_scroll.setWidget(memo_text)
-            
-            memo_title = QLabel("💬 메모:")
+            memo_title = QLabel("💬 메모: (클릭하여 복사)")
             memo_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #1d1d1f;")
             info_layout.addWidget(memo_title)
+            
+            # 클릭 가능한 메모 영역
+            memo_scroll = ClickableMemoArea(memo, parent=dialog)
+            memo_scroll.setFixedHeight(180)
             info_layout.addWidget(memo_scroll)
         
         layout.addLayout(info_layout)
