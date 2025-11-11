@@ -504,10 +504,20 @@ class MainWindow(QMainWindow):
             self.clear_filter_btn.hide()
 
     def export_image(self):
-        """이미지 내보내기 - Milestone_IMG 폴더에 블록별로 분리 저장"""
+        """이미지 내보내기 - 필터링된 마일스톤만 저장"""
+        # 필터링 확인
+        if not self.filter_settings:
+            self._show_message(QMessageBox.Icon.Warning, "필터 필요",
+                               "이미지 추출을 위해서는 필터를 적용해주세요.\n\n"
+                               "🔍 Search: 키워드로 검색\n"
+                               "🗓️ Date: 날짜로 필터링\n"
+                               "📌 키워드: 키워드 선택\n"
+                               "📅 이번달 Milestone: 이번달 일정")
+            return
+        
         if not self.milestone_widgets:
             self._show_message(QMessageBox.Icon.Warning, "경고",
-                               "내보낼 마일스톤이 없습니다.")
+                               "필터링된 마일스톤이 없습니다.")
             return
 
         filename, _ = QFileDialog.getSaveFileName(
