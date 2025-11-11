@@ -511,6 +511,12 @@ class MainWindow(QMainWindow):
                     kw_text = ", ".join(keywords)
                     status_parts.append(f"📌 키워드: {kw_text}")
 
+            # Milestone List 필터
+            milestone_list_id = self.filter_settings.get("milestone_list_id", "")
+            milestone_list_title = self.filter_settings.get("milestone_list_title", "")
+            if milestone_list_id and milestone_list_title:
+                status_parts.append(f"📋 선택: {milestone_list_title}")
+
             keyword = self.filter_settings.get("keyword", "")
             content_keyword = self.filter_settings.get("content_keyword", "")
             shape = self.filter_settings.get("shape", "")
@@ -1074,6 +1080,30 @@ class MainWindow(QMainWindow):
     def _on_milestone_list_selected(self, milestone_id: str):
         """Milestone List에서 선택 시 핸들러"""
         self.selected_milestone_id_from_list = milestone_id
+        
+        # 선택된 마일스톤의 제목 찾기
+        milestone_title = ""
+        for m in self.filtered_milestones:
+            if m.get("id") == milestone_id:
+                milestone_title = m.get("title", "")
+                break
+        
+        # 필터 설정 업데이트 (기존 키워드 필터는 유지하고 마일스톤 선택 추가)
+        if self.filter_settings and self.filter_settings.get("type") == "keyword":
+            # 키워드 필터가 있으면 마일스톤 선택 정보 추가
+            self.filter_settings["milestone_list_id"] = milestone_id
+            self.filter_settings["milestone_list_title"] = milestone_title
+        else:
+            # 키워드 필터가 없으면 마일스톤 선택만 설정
+            self.filter_settings = {
+                "type": "milestone_list",
+                "milestone_list_id": milestone_id,
+                "milestone_list_title": milestone_title
+            }
+        
+        # 필터 상태 표시 업데이트
+        self._update_filter_status()
+        
         # 행3에 해당 마일스톤만 표시하도록 UI 갱신
         self._show_current_milestone_for_row3()
 
