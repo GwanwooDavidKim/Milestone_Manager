@@ -570,7 +570,10 @@ class MainWindow(QMainWindow):
                 for i, milestone in enumerate(self.filtered_milestones, 1):
                     # 임시로 마일스톤 블록 생성
                     temp_widget = self._create_milestone_block(milestone)
+                    # 이미지 저장을 위한 크기 설정 (Main UI와 동일한 가로, 세로는 600px)
+                    temp_widget.setFixedSize(1500, 600)  # 가로 1500px, 세로 600px
                     temp_widget.show()  # 렌더링을 위해 보이도록 설정
+                    temp_widget.repaint()  # 강제 렌더링
                     pixmap = temp_widget.grab()
                     output_filename = os.path.join(
                         img_folder, f"{base_name}_{i}{extension}")
