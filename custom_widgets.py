@@ -1026,7 +1026,7 @@ class ClickableMemoArea(QScrollArea):
         self.setWidget(self.memo_label)
         
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("클릭하여 메모를 클립보드에 복사")
+        self.setToolTip("📋 복사")
     
     def mousePressEvent(self, event):
         """클릭 시 메모 내용을 클립보드에 복사"""
@@ -1045,7 +1045,7 @@ class ClickableMemoArea(QScrollArea):
             
             # 툴팁 피드백 - "복사됨!" 표시 후 원래대로
             self.setToolTip("✅ 복사됨!")
-            QTimer.singleShot(1500, lambda: self.setToolTip("클릭하여 메모를 클립보드에 복사"))
+            QTimer.singleShot(1500, lambda: self.setToolTip("📋 복사"))
         super().mousePressEvent(event)
 
 
