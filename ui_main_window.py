@@ -542,7 +542,7 @@ class MainWindow(QMainWindow):
                                "📅 이번달 Milestone: 이번달 일정")
             return
         
-        if not self.milestone_widgets:
+        if not self.filtered_milestones:
             self._show_message(QMessageBox.Icon.Warning, "경고",
                                "필터링된 마일스톤이 없습니다.")
             return
@@ -564,12 +564,17 @@ class MainWindow(QMainWindow):
                 extension = os.path.splitext(filename)[1]
 
                 saved_files = []
-                for i, widget in enumerate(self.milestone_widgets, 1):
-                    pixmap = widget.grab()
+                # 필터링된 각 마일스톤을 이미지로 저장
+                for i, milestone in enumerate(self.filtered_milestones, 1):
+                    # 임시로 마일스톤 블록 생성
+                    temp_widget = self._create_milestone_block(milestone)
+                    temp_widget.show()  # 렌더링을 위해 보이도록 설정
+                    pixmap = temp_widget.grab()
                     output_filename = os.path.join(
                         img_folder, f"{base_name}_{i}{extension}")
                     pixmap.save(output_filename)
                     saved_files.append(output_filename)
+                    temp_widget.deleteLater()  # 임시 위젯 삭제
 
                 files_list = "\n".join(
                     [f"  • {os.path.basename(f)}" for f in saved_files])
