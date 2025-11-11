@@ -886,6 +886,8 @@ class KeywordBlock(QWidget):
 class ThisMonthBlock(QWidget):
     """이번달 일정 관리 Block 위젯 - 3열 그리드"""
     
+    milestone_clicked = pyqtSignal(str)  # KPI 카드에서 마일스톤 ID를 전달
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -943,11 +945,13 @@ class ThisMonthBlock(QWidget):
         
         this_month_nodes = []
         for milestone in milestones:
+            milestone_id = milestone.get("id", "")
             milestone_title = milestone.get("title", "")
             for node in milestone.get("nodes", []):
                 date_str = node.get("date", "")
                 if self._is_this_month(date_str, current_year, current_month):
                     this_month_nodes.append({
+                        "milestone_id": milestone_id,
                         "milestone_title": milestone_title,
                         "node": node
                     })
@@ -962,7 +966,7 @@ class ThisMonthBlock(QWidget):
             row = 0
             col = 0
             for item in this_month_nodes:
-                kpi_card = self._create_kpi_card(item["milestone_title"], item["node"])
+                kpi_card = self._create_kpi_card(item["milestone_id"], item["milestone_title"], item["node"])
                 self.kpi_layout.addWidget(kpi_card, row, col)
                 
                 # 다음 위치 계산 (3열)
@@ -983,17 +987,22 @@ class ThisMonthBlock(QWidget):
             pass
         return False
     
-    def _create_kpi_card(self, milestone_title: str, node: Dict) -> QWidget:
+    def _create_kpi_card(self, milestone_id: str, milestone_title: str, node: Dict) -> QWidget:
         """KPI 카드 생성 - 클릭 가능, 고정 크기, 메모 2줄"""
-        card = ClickableKPICard(milestone_title, node)
+        card = ClickableKPICard(milestone_id, milestone_title, node, parent=self)
+        # 카드의 클릭 시그널을 ThisMonthBlock의 시그널로 포워딩
+        card.milestone_clicked.connect(self.milestone_clicked.emit)
         return card
 
 
 class ClickableKPICard(QFrame):
     """클릭 가능한 KPI 카드 - 고정 크기, 메모 2줄 제한"""
     
-    def __init__(self, milestone_title: str, node: Dict, parent=None):
+    milestone_clicked = pyqtSignal(str)  # milestone_id를 전달하는 시그널
+    
+    def __init__(self, milestone_id: str, milestone_title: str, node: Dict, parent=None):
         super().__init__(parent)
+        self.milestone_id = milestone_id
         self.milestone_title = milestone_title
         self.node = node
         
@@ -1054,9 +1063,10 @@ class ClickableKPICard(QFrame):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
     
     def mousePressEvent(self, event):
-        """클릭 시 상세 정보 팝업"""
+        """클릭 시 상세 정보 팝업 + 마일스톤 필터링"""
         if event.button() == Qt.MouseButton.LeftButton:
             self._show_detail_dialog()
+            self.milestone_clicked.emit(self.milestone_id)  # 시그널 발행
         super().mousePressEvent(event)
     
     def _show_detail_dialog(self):

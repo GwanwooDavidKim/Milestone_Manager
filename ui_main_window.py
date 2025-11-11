@@ -221,6 +221,8 @@ class MainWindow(QMainWindow):
         # 이번달 일정 Block - 고정 높이
         self.this_month_block = ThisMonthBlock(self)
         self.this_month_block.setFixedHeight(450)  # 고정 높이
+        self.this_month_block.milestone_clicked.connect(
+            self._filter_by_milestone_id)
         row2_layout.addWidget(self.this_month_block, stretch=1)
 
         main_layout.addLayout(row2_layout, stretch=0)
@@ -461,6 +463,22 @@ class MainWindow(QMainWindow):
         self._update_filter_status()
         self._refresh_ui()
 
+    def _filter_by_milestone_id(self, milestone_id: str):
+        """마일스톤 ID로 필터링 (KPI Chart 클릭 시)"""
+        # 마일스톤 제목 찾기
+        milestone_title = ""
+        for m in self.data_manager.get_milestones():
+            if m.get("id") == milestone_id:
+                milestone_title = m.get("title", "")
+                break
+        
+        self.filter_settings = {
+            "milestone_id": milestone_id,
+            "milestone_title": milestone_title
+        }
+        self._update_filter_status()
+        self._refresh_ui()
+
     def clear_filter(self):
         """필터 해제"""
         self.filter_settings = None
@@ -484,7 +502,11 @@ class MainWindow(QMainWindow):
             shape = self.filter_settings.get("shape", "")
             this_month = self.filter_settings.get("this_month", False)
             date_filter = self.filter_settings.get("date_filter", False)
+            milestone_id = self.filter_settings.get("milestone_id", "")
+            milestone_title = self.filter_settings.get("milestone_title", "")
 
+            if milestone_id and milestone_title:
+                status_parts.append(f"📍 마일스톤: {milestone_title}")
             if this_month:
                 current_month = self.filter_settings.get("current_month", 0)
                 status_parts.append(f"📅 이번달 일정 ({current_month}월)")
@@ -609,6 +631,11 @@ class MainWindow(QMainWindow):
         """필터링 - 제목과 부제목에서만 검색"""
         if not self.filter_settings:
             return True
+
+        # 마일스톤 ID 필터 (KPI Chart 클릭)
+        milestone_id_filter = self.filter_settings.get("milestone_id", "")
+        if milestone_id_filter:
+            return milestone.get("id") == milestone_id_filter
 
         # 키워드 필터 (여러 키워드 AND 조건)
         if self.filter_settings.get("type") == "keyword":
