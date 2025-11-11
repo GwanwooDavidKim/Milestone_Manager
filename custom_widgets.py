@@ -881,6 +881,12 @@ class KeywordBlock(QWidget):
     def get_selected_keywords(self) -> List[str]:
         """선택된 키워드 목록 반환"""
         return [kw for kw, frame in self.keyword_checkboxes.items() if frame.is_selected]
+    
+    def clear_all_selections(self):
+        """모든 키워드 선택 해제"""
+        for frame in self.keyword_checkboxes.values():
+            frame.set_selected(False)
+        self._emit_selected_keywords()
 
 
 class ThisMonthBlock(QWidget):

@@ -482,6 +482,8 @@ class MainWindow(QMainWindow):
     def clear_filter(self):
         """필터 해제"""
         self.filter_settings = None
+        # 키워드 블록의 선택도 해제
+        self.keyword_block.clear_all_selections()
         self._update_filter_status()
         self._refresh_ui()
 
