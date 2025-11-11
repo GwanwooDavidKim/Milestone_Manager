@@ -10,7 +10,7 @@ from typing import List, Dict, Set, Optional
 from data_manager import DataManager
 from custom_widgets import (MilestoneDialog, NodeDialog, SearchFilterDialog,
                             DateFilterDialog, ZoomableTimelineDialog,
-                            KeywordBlock, ThisMonthBlock)
+                            KeywordBlock, MilestoneListBlock, ThisMonthBlock)
 from timeline_canvas import TimelineCanvas
 
 
@@ -207,7 +207,7 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(row1_container, stretch=0)
 
-        # ===== 행2: 키워드 Block (30%) + 이번달 일정 Block (70%) =====
+        # ===== 행2: 키워드 Block (25%) + Milestone List Block (25%) + 이번달 일정 Block (50%) =====
         row2_layout = QHBoxLayout()
         row2_layout.setSpacing(10)
 
@@ -218,6 +218,14 @@ class MainWindow(QMainWindow):
         self.keyword_block.keywords_changed.connect(
             self._on_keyword_filter_changed)
         row2_layout.addWidget(self.keyword_block)
+
+        # Milestone List Block - 고정 높이
+        self.milestone_list_block = MilestoneListBlock(self)
+        self.milestone_list_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
+        self.milestone_list_block.setFixedHeight(450)  # 고정 높이
+        self.milestone_list_block.milestone_selected.connect(
+            self._on_milestone_list_selected)
+        row2_layout.addWidget(self.milestone_list_block)
 
         # 이번달 일정 Block - 고정 높이
         self.this_month_block = ThisMonthBlock(self)
@@ -485,6 +493,9 @@ class MainWindow(QMainWindow):
         self.filter_settings = None
         # 키워드 블록의 선택도 해제
         self.keyword_block.clear_all_selections()
+        # Milestone List 블록의 선택도 해제
+        self.milestone_list_block.clear_selection()
+        self.selected_milestone_id_from_list = None
         self._update_filter_status()
         self._refresh_ui()
 
@@ -602,13 +613,16 @@ class MainWindow(QMainWindow):
         """UI 새로고침 - 페이지네이션 방식"""
         milestones = self.data_manager.get_milestones()
 
-        # 필터링된 마일스톤 목록 생성
+        # 필터링된 마일스톤 목록 생성 (키워드 필터 적용)
         self.filtered_milestones = [
             m for m in milestones if self._should_show_milestone(m)
         ]
 
         # 키워드 Block reload
         self.keyword_block.load_keywords()
+
+        # Milestone List Block 업데이트 (키워드 필터링된 결과만 표시)
+        self.milestone_list_block.update_milestones(self.filtered_milestones)
 
         # 이번달 일정 Block 업데이트
         self.this_month_block.update_nodes(milestones)
@@ -621,8 +635,8 @@ class MainWindow(QMainWindow):
                 0,
                 len(self.filtered_milestones) - 1)
 
-        # 현재 마일스톤 표시
-        self._show_current_milestone()
+        # 현재 마일스톤 표시 (행3)
+        self._show_current_milestone_for_row3()
 
     def _update_data_status(self):
         """데이터 상태 레이블 업데이트"""
@@ -1048,30 +1062,75 @@ class MainWindow(QMainWindow):
             if self.filter_settings and self.filter_settings.get(
                     "type") == "keyword":
                 self.clear_filter()
+                return  # clear_filter()가 _refresh_ui()를 호출하므로 여기서 종료
+
+        # Milestone List 선택 초기화 (키워드 변경 시)
+        self.milestone_list_block.clear_selection()
+        self.selected_milestone_id_from_list = None
 
         # UI 갱신
         self._refresh_ui()
+    
+    def _on_milestone_list_selected(self, milestone_id: str):
+        """Milestone List에서 선택 시 핸들러"""
+        self.selected_milestone_id_from_list = milestone_id
+        # 행3에 해당 마일스톤만 표시하도록 UI 갱신
+        self._show_current_milestone_for_row3()
 
     def _show_previous_milestone(self):
         """이전 마일스톤 표시"""
         if self.current_milestone_index > 0:
             self.current_milestone_index -= 1
-            self._show_current_milestone()
+            self._show_current_milestone_for_row3()
 
     def _show_next_milestone(self):
         """다음 마일스톤 표시"""
         if self.current_milestone_index < len(self.filtered_milestones) - 1:
             self.current_milestone_index += 1
-            self._show_current_milestone()
+            self._show_current_milestone_for_row3()
 
-    def _show_current_milestone(self):
-        """현재 인덱스의 마일스톤 표시"""
+    def _show_current_milestone_for_row3(self):
+        """행3에 마일스톤 표시 - Milestone List 선택 고려"""
         # 기존 위젯 제거
         for i in reversed(range(self.milestone_layout.count())):
             widget = self.milestone_layout.itemAt(i).widget()
             if widget:
                 widget.deleteLater()
 
+        # Milestone List에서 선택된 마일스톤이 있으면 해당 마일스톤만 표시
+        if self.selected_milestone_id_from_list:
+            # filtered_milestones에서 해당 마일스톤 찾기
+            selected_milestone = None
+            for m in self.filtered_milestones:
+                if m.get("id") == self.selected_milestone_id_from_list:
+                    selected_milestone = m
+                    break
+            
+            if selected_milestone:
+                milestone_widget = self._create_milestone_block(selected_milestone)
+                self.milestone_layout.addWidget(milestone_widget)
+                
+                # 페이지네이션 비활성화 (단일 마일스톤만 표시)
+                self.prev_btn.setEnabled(False)
+                self.next_btn.setEnabled(False)
+                self.milestone_nav_label.setText("1 / 1")
+            else:
+                # 선택된 마일스톤이 필터링된 목록에 없음
+                no_data_label = QLabel("선택된 마일스톤이 필터링되어 표시되지 않습니다.")
+                no_data_label.setStyleSheet("""
+                    font-size: 14px;
+                    color: #86868b;
+                    padding: 50px;
+                """)
+                no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.milestone_layout.addWidget(no_data_label)
+                
+                self.prev_btn.setEnabled(False)
+                self.next_btn.setEnabled(False)
+                self.milestone_nav_label.setText("0 / 0")
+            return
+
+        # Milestone List 선택이 없으면 기존 페이지네이션 방식
         # 마일스톤이 없으면 빈 메시지 표시
         if not self.filtered_milestones:
             no_data_label = QLabel("마일스톤이 없습니다.")
