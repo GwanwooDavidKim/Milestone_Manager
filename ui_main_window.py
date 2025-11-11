@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         self.filter_settings = None
         self.current_milestone_index = 0  # 현재 표시 중인 마일스톤 인덱스
         self.filtered_milestones = []  # 필터링된 마일스톤 목록
+        self.selected_milestone_id_from_list: Optional[str] = None  # Milestone List에서 선택된 마일스톤 ID
 
         self.setStyleSheet("""
             QMainWindow {

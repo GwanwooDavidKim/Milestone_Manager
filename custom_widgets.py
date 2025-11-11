@@ -889,8 +889,180 @@ class KeywordBlock(QWidget):
         self._emit_selected_keywords()
 
 
+class MilestoneListBlock(QWidget):
+    """Milestone List Block - 단일 선택 방식"""
+    
+    milestone_selected = pyqtSignal(str)  # 선택된 마일스톤 ID 전달
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        self.selected_milestone_id = None  # 현재 선택된 마일스톤 ID
+        self.milestone_cards = {}  # milestone_id -> card 위젯 매핑
+        
+        self.setStyleSheet("""
+            QWidget {
+                background: white;
+                border: 1px solid #d2d2d7;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #1d1d1f;
+                border: none;
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        
+        # 제목
+        title_label = QLabel("📋 Milestone List")
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #1d1d1f; border: none;")
+        layout.addWidget(title_label)
+        
+        # 스크롤 영역
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        
+        self.list_container = QWidget()
+        self.list_layout = QVBoxLayout()
+        self.list_layout.setSpacing(8)
+        self.list_layout.setContentsMargins(5, 5, 5, 5)
+        self.list_container.setLayout(self.list_layout)
+        self.list_container.setStyleSheet("background: transparent; border: none;")
+        
+        scroll_area.setWidget(self.list_container)
+        layout.addWidget(scroll_area)
+        
+        self.setLayout(layout)
+    
+    def update_milestones(self, milestones: List[Dict]):
+        """마일스톤 목록 업데이트"""
+        # 기존 카드 제거
+        while self.list_layout.count():
+            item = self.list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        self.milestone_cards.clear()
+        
+        # 마일스톤 카드 생성
+        if not milestones:
+            no_data_label = QLabel("마일스톤이 없습니다.")
+            no_data_label.setStyleSheet("color: #86868b; font-size: 13px; padding: 20px;")
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.list_layout.addWidget(no_data_label)
+        else:
+            for milestone in milestones:
+                card = self._create_milestone_card(milestone)
+                self.list_layout.addWidget(card)
+                self.milestone_cards[milestone["id"]] = card
+            
+            # 빈 공간 채우기
+            self.list_layout.addStretch()
+    
+    def _create_milestone_card(self, milestone: Dict) -> QFrame:
+        """마일스톤 카드 생성 - 클릭 시 단일 선택"""
+        card = QFrame()
+        card.setObjectName("milestone_card")
+        card.setStyleSheet("""
+            QFrame#milestone_card {
+                background: white;
+                border: 2px solid #e8e8ed;
+                border-radius: 8px;
+                padding: 12px;
+            }
+            QFrame#milestone_card:hover {
+                border: 2px solid #86868b;
+            }
+        """)
+        card.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        # 마일스톤 ID를 카드에 저장
+        card.milestone_id = milestone["id"]
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        
+        # 제목
+        title = QLabel(milestone.get("title", ""))
+        title.setStyleSheet("font-size: 14px; font-weight: bold; color: #1d1d1f; border: none;")
+        title.setWordWrap(True)
+        layout.addWidget(title)
+        
+        # 부제목
+        subtitle = QLabel(milestone.get("subtitle", ""))
+        subtitle.setStyleSheet("font-size: 12px; color: #86868b; border: none;")
+        subtitle.setWordWrap(True)
+        layout.addWidget(subtitle)
+        
+        card.setLayout(layout)
+        
+        # 클릭 이벤트
+        card.mousePressEvent = lambda event: self._on_card_clicked(milestone["id"])
+        
+        return card
+    
+    def _on_card_clicked(self, milestone_id: str):
+        """카드 클릭 시 단일 선택 처리"""
+        # 이전에 선택된 카드의 스타일 해제
+        if self.selected_milestone_id and self.selected_milestone_id in self.milestone_cards:
+            prev_card = self.milestone_cards[self.selected_milestone_id]
+            prev_card.setStyleSheet("""
+                QFrame#milestone_card {
+                    background: white;
+                    border: 2px solid #e8e8ed;
+                    border-radius: 8px;
+                    padding: 12px;
+                }
+                QFrame#milestone_card:hover {
+                    border: 2px solid #86868b;
+                }
+            """)
+        
+        # 새로운 카드 선택
+        self.selected_milestone_id = milestone_id
+        if milestone_id in self.milestone_cards:
+            card = self.milestone_cards[milestone_id]
+            card.setStyleSheet("""
+                QFrame#milestone_card {
+                    background: white;
+                    border: 2px solid #007AFF;
+                    border-radius: 8px;
+                    padding: 12px;
+                }
+                QFrame#milestone_card:hover {
+                    border: 2px solid #007AFF;
+                }
+            """)
+        
+        # 시그널 발송
+        self.milestone_selected.emit(milestone_id)
+    
+    def clear_selection(self):
+        """선택 해제"""
+        if self.selected_milestone_id and self.selected_milestone_id in self.milestone_cards:
+            card = self.milestone_cards[self.selected_milestone_id]
+            card.setStyleSheet("""
+                QFrame#milestone_card {
+                    background: white;
+                    border: 2px solid #e8e8ed;
+                    border-radius: 8px;
+                    padding: 12px;
+                }
+                QFrame#milestone_card:hover {
+                    border: 2px solid #86868b;
+                }
+            """)
+        
+        self.selected_milestone_id = None
+
+
 class ThisMonthBlock(QWidget):
-    """이번달 일정 관리 Block 위젯 - 3열 그리드"""
+    """이번달 일정 관리 Block 위젯 - 2열 그리드"""
     
     milestone_clicked = pyqtSignal(str)  # KPI 카드에서 마일스톤 ID를 전달
     
@@ -924,7 +1096,7 @@ class ThisMonthBlock(QWidget):
         scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         
         self.kpi_container = QWidget()
-        # ✅ 3열 그리드 레이아웃으로 변경
+        # ✅ 2열 그리드 레이아웃으로 변경
         self.kpi_layout = QGridLayout()
         self.kpi_layout.setSpacing(8)
         self.kpi_layout.setContentsMargins(5, 5, 5, 5)
@@ -937,7 +1109,7 @@ class ThisMonthBlock(QWidget):
         self.setLayout(layout)
     
     def update_nodes(self, milestones: List[Dict]):
-        """이번달 노드들로 KPI 차트 업데이트 - 3열 그리드"""
+        """이번달 노드들로 KPI 차트 업데이트 - 2열 그리드"""
         # 기존 KPI 카드 제거
         while self.kpi_layout.count():
             item = self.kpi_layout.takeAt(0)
@@ -962,12 +1134,12 @@ class ThisMonthBlock(QWidget):
                         "node": node
                     })
         
-        # KPI 카드 생성 - 3열 그리드로 배치
+        # KPI 카드 생성 - 2열 그리드로 배치
         if not this_month_nodes:
             no_data_label = QLabel("이번달 일정이 없습니다.")
             no_data_label.setStyleSheet("color: #86868b; font-size: 13px; padding: 20px;")
             no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.kpi_layout.addWidget(no_data_label, 0, 0, 1, 3)  # 3열 전체
+            self.kpi_layout.addWidget(no_data_label, 0, 0, 1, 2)  # 2열 전체
         else:
             row = 0
             col = 0
@@ -975,9 +1147,9 @@ class ThisMonthBlock(QWidget):
                 kpi_card = self._create_kpi_card(item["milestone_id"], item["milestone_title"], item["node"])
                 self.kpi_layout.addWidget(kpi_card, row, col)
                 
-                # 다음 위치 계산 (3열)
+                # 다음 위치 계산 (2열)
                 col += 1
-                if col >= 3:
+                if col >= 2:
                     col = 0
                     row += 1
     
