@@ -168,6 +168,11 @@ class MainWindow(QMainWindow):
         date_filter_btn.clicked.connect(self.filter_by_date)
         toolbar.addWidget(date_filter_btn)
 
+        this_month_btn = QPushButton("📅 이번달 Milestone")
+        this_month_btn.setObjectName("secondary")
+        this_month_btn.clicked.connect(self.filter_this_month)
+        toolbar.addWidget(this_month_btn)
+
         export_btn = QPushButton("📤 이미지")
         export_btn.setObjectName("secondary")
         export_btn.clicked.connect(self.export_image)
