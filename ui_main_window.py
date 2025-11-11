@@ -572,6 +572,12 @@ class MainWindow(QMainWindow):
                     temp_widget = self._create_milestone_block(milestone)
                     # 이미지 저장을 위한 크기 설정 (Main UI와 동일한 가로, 세로는 600px)
                     temp_widget.setFixedSize(1500, 600)  # 가로 1500px, 세로 600px
+                    
+                    # 타임라인 캔버스 높이도 조정 (이미지에 모든 노드가 보이도록)
+                    timeline_canvas = temp_widget.findChild(TimelineCanvas)
+                    if timeline_canvas:
+                        timeline_canvas.setFixedHeight(500)  # 타임라인 높이 증가
+                    
                     temp_widget.show()  # 렌더링을 위해 보이도록 설정
                     temp_widget.repaint()  # 강제 렌더링
                     pixmap = temp_widget.grab()

@@ -1018,6 +1018,14 @@ class ClickableMemoArea(QScrollArea):
             QScrollArea:hover {
                 border: 2px solid #007AFF;
             }
+            QToolTip {
+                background-color: white;
+                color: #1d1d1f;
+                border: 1px solid #007AFF;
+                border-radius: 4px;
+                padding: 5px;
+                font-size: 12px;
+            }
         """)
         
         self.memo_label = QLabel(memo_text)
