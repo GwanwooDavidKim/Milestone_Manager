@@ -1154,13 +1154,32 @@ class ThisMonthBlock(QWidget):
                     row += 1
     
     def _is_this_month(self, date_str: str, current_year: int, current_month: int) -> bool:
-        """날짜가 이번달인지 확인"""
+        """날짜가 이번달인지 확인 (월 또는 분기)"""
         try:
             parts = date_str.strip().upper().split(".")
-            if len(parts) == 2 and "Q" not in date_str:
-                year = int(parts[0])
+            if len(parts) != 2:
+                return False
+            
+            year = int(parts[0])
+            if year != current_year:
+                return False
+            
+            # 월 형식 (YY.MM)
+            if "Q" not in date_str:
                 month = int(parts[1])
-                return year == current_year and month == current_month
+                return month == current_month
+            
+            # 분기 형식 (YY.Qn)
+            if parts[1].startswith("Q"):
+                quarter = int(parts[1][1])  # "Q4" -> 4
+                # 분기별 월 계산
+                quarter_months = {
+                    1: [1, 2, 3],
+                    2: [4, 5, 6],
+                    3: [7, 8, 9],
+                    4: [10, 11, 12]
+                }
+                return current_month in quarter_months.get(quarter, [])
         except:
             pass
         return False
