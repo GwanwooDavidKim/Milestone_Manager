@@ -211,12 +211,12 @@ class MainWindow(QMainWindow):
 
         left_column_layout.addLayout(toolbar)
         
-        row1_main_layout.addWidget(left_column, stretch=3)
+        row1_main_layout.addWidget(left_column, stretch=17)
         
-        # 오른쪽 열: Milestone Tree 버튼만
+        # 오른쪽 열: Milestone Tree 버튼만 (약 15% 너비)
         right_column = QWidget()
         right_column_layout = QVBoxLayout(right_column)
-        right_column_layout.setContentsMargins(0, 0, 0, 0)
+        right_column_layout.setContentsMargins(20, 0, 20, 0)
         right_column_layout.setSpacing(0)
         
         # 위아래 stretch로 완전 중앙 정렬
@@ -249,7 +249,7 @@ class MainWindow(QMainWindow):
         
         right_column_layout.addStretch()
         
-        row1_main_layout.addWidget(right_column, stretch=1)
+        row1_main_layout.addWidget(right_column, stretch=3)
 
         main_layout.addWidget(row1_container, stretch=0)
 
