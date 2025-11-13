@@ -1564,12 +1564,13 @@ class MilestoneTreeDialog(ModernDialog):
     def _create_milestone_card(self, milestone: Dict) -> QWidget:
         """마일스톤 카드 생성 (클릭 가능)"""
         card = QPushButton()
+        card.setMinimumHeight(100)
         card.setStyleSheet("""
             QPushButton {
                 background: white;
                 border: 2px solid #d2d2d7;
                 border-radius: 10px;
-                padding: 12px;
+                padding: 15px;
                 text-align: left;
             }
             QPushButton:hover {
@@ -1583,7 +1584,8 @@ class MilestoneTreeDialog(ModernDialog):
         
         # 카드 내용 레이아웃
         card_layout = QVBoxLayout()
-        card_layout.setSpacing(5)
+        card_layout.setSpacing(8)
+        card_layout.setContentsMargins(5, 5, 5, 5)
         
         # 제목
         title_label = QLabel(milestone.get("title", ""))
