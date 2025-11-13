@@ -10,7 +10,8 @@ from typing import List, Dict, Set, Optional
 from data_manager import DataManager
 from custom_widgets import (MilestoneDialog, NodeDialog, SearchFilterDialog,
                             DateFilterDialog, ZoomableTimelineDialog,
-                            KeywordBlock, MilestoneListBlock, ThisMonthBlock)
+                            KeywordBlock, MilestoneListBlock, ThisMonthBlock,
+                            MilestoneTreeDialog)
 from timeline_canvas import TimelineCanvas
 
 
@@ -1245,3 +1246,26 @@ class MainWindow(QMainWindow):
         # 버튼 활성화/비활성화
         self.prev_btn.setEnabled(self.current_milestone_index > 0)
         self.next_btn.setEnabled(self.current_milestone_index < total - 1)
+
+    def _show_milestone_tree(self):
+        """Milestone Tree 다이얼로그 표시"""
+        # 모든 마일스톤 가져오기 (필터링 없이)
+        all_milestones = self.data_manager.get_milestones()
+        
+        if not all_milestones:
+            self._show_message(QMessageBox.Icon.Information, "안내",
+                               "마일스톤이 없습니다.\n먼저 마일스톤을 생성해주세요.")
+            return
+        
+        # Milestone Tree 다이얼로그 열기
+        dialog = MilestoneTreeDialog(self, all_milestones)
+        dialog.milestone_selected.connect(self._on_milestone_selected_from_tree)
+        dialog.exec()
+    
+    def _on_milestone_selected_from_tree(self, milestone_id: str):
+        """Milestone Tree에서 마일스톤 선택 시 - Milestone List Block과 동일한 방식으로 처리"""
+        # Milestone List Block의 선택도 동기화
+        self.milestone_list_block.select_milestone(milestone_id)
+        
+        # Milestone List 선택 핸들러 호출 (필터링 및 표시 처리)
+        self._on_milestone_list_selected(milestone_id)
