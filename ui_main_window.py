@@ -207,17 +207,9 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(row1_container, stretch=0)
 
-        # ===== 행2: 키워드 Block (25%) + Milestone List Block (25%) + 이번달 일정 Block (50%) =====
+        # ===== 행2: Milestone List Block (25%) + 키워드 Block (25%) + 이번달 일정 Block (50%) =====
         row2_layout = QHBoxLayout()
         row2_layout.setSpacing(10)
-
-        # 키워드 Block - 고정 높이
-        self.keyword_block = KeywordBlock(self, self.data_manager)
-        self.keyword_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
-        self.keyword_block.setFixedHeight(450)  # 고정 높이
-        self.keyword_block.keywords_changed.connect(
-            self._on_keyword_filter_changed)
-        row2_layout.addWidget(self.keyword_block)
 
         # Milestone List Block - 고정 높이
         self.milestone_list_block = MilestoneListBlock(self)
@@ -226,6 +218,14 @@ class MainWindow(QMainWindow):
         self.milestone_list_block.milestone_selected.connect(
             self._on_milestone_list_selected)
         row2_layout.addWidget(self.milestone_list_block)
+
+        # 키워드 Block - 고정 높이
+        self.keyword_block = KeywordBlock(self, self.data_manager)
+        self.keyword_block.setFixedWidth(int(1600 * 0.25))  # 25% 너비
+        self.keyword_block.setFixedHeight(450)  # 고정 높이
+        self.keyword_block.keywords_changed.connect(
+            self._on_keyword_filter_changed)
+        row2_layout.addWidget(self.keyword_block)
 
         # 이번달 일정 Block - 고정 높이
         self.this_month_block = ThisMonthBlock(self)
