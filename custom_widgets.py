@@ -1070,6 +1070,11 @@ class MilestoneListBlock(QWidget):
             """)
         
         self.selected_milestone_id = None
+    
+    def select_milestone(self, milestone_id: str):
+        """외부에서 마일스톤 선택 (Milestone Tree 연동용)"""
+        if milestone_id in self.milestone_cards:
+            self._on_card_clicked(milestone_id)
 
 
 class ThisMonthBlock(QWidget):
