@@ -1564,7 +1564,7 @@ class MilestoneTreeDialog(ModernDialog):
     def _create_milestone_card(self, milestone: Dict) -> QWidget:
         """마일스톤 카드 생성 (클릭 가능)"""
         card = QFrame()
-        card.setMinimumHeight(110)
+        card.setFixedHeight(85)
         card.setCursor(Qt.CursorShape.PointingHandCursor)
         card.setStyleSheet("""
             QFrame {
@@ -1583,15 +1583,17 @@ class MilestoneTreeDialog(ModernDialog):
         
         # 카드 내용 레이아웃
         card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(10)
-        card_layout.setContentsMargins(12, 12, 12, 12)
+        card_layout.setSpacing(4)
+        card_layout.setContentsMargins(10, 8, 10, 8)
         
         # 제목
         title_label = QLabel(milestone.get("title", ""))
         title_label.setStyleSheet("""
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #1d1d1f;
+            border: none;
+            background: transparent;
         """)
         title_label.setWordWrap(True)
         card_layout.addWidget(title_label)
@@ -1601,8 +1603,10 @@ class MilestoneTreeDialog(ModernDialog):
         if subtitle:
             subtitle_label = QLabel(subtitle)
             subtitle_label.setStyleSheet("""
-                font-size: 11px;
+                font-size: 10px;
                 color: #86868b;
+                border: none;
+                background: transparent;
             """)
             subtitle_label.setWordWrap(True)
             card_layout.addWidget(subtitle_label)
@@ -1611,8 +1615,10 @@ class MilestoneTreeDialog(ModernDialog):
         node_count = len(milestone.get("nodes", []))
         node_label = QLabel(f"📊 {node_count}개 노드")
         node_label.setStyleSheet("""
-            font-size: 10px;
+            font-size: 9px;
             color: #007AFF;
+            border: none;
+            background: transparent;
         """)
         card_layout.addWidget(node_label)
         
