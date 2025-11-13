@@ -181,6 +181,33 @@ class MainWindow(QMainWindow):
 
         toolbar.addStretch()
 
+        # 🌳 Milestone Tree 버튼 (중앙, 눈에 띄는 디자인)
+        tree_btn = QPushButton("🌳 Milestone Tree")
+        tree_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #007AFF, stop:1 #0051D5);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 12px 24px;
+                font-size: 14px;
+                font-weight: bold;
+                min-width: 180px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1A8CFF, stop:1 #0062FF);
+            }
+            QPushButton:pressed {
+                background: #0051D5;
+            }
+        """)
+        tree_btn.clicked.connect(self._show_milestone_tree)
+        toolbar.addWidget(tree_btn)
+
+        toolbar.addStretch()
+
         # 필터 상태 표시 레이블
         self.filter_status_label = QLabel("")
         self.filter_status_label.setStyleSheet("""
