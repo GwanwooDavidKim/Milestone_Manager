@@ -218,7 +218,9 @@ class MainWindow(QMainWindow):
         right_column_layout = QVBoxLayout(right_column)
         right_column_layout.setContentsMargins(0, 0, 0, 0)
         right_column_layout.setSpacing(0)
-        right_column_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # 위아래 stretch로 완전 중앙 정렬
+        right_column_layout.addStretch()
         
         tree_btn = QPushButton("🌳 Milestone Tree")
         tree_btn.setStyleSheet("""
@@ -227,12 +229,12 @@ class MainWindow(QMainWindow):
                     stop:0 #007AFF, stop:1 #0051D5);
                 color: white;
                 border: none;
-                border-radius: 10px;
-                padding: 10px 20px;
-                font-size: 14px;
+                border-radius: 8px;
+                padding: 8px 18px;
+                font-size: 13px;
                 font-weight: bold;
-                min-width: 180px;
-                min-height: 35px;
+                min-width: 170px;
+                min-height: 28px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -244,6 +246,8 @@ class MainWindow(QMainWindow):
         """)
         tree_btn.clicked.connect(self._show_milestone_tree)
         right_column_layout.addWidget(tree_btn)
+        
+        right_column_layout.addStretch()
         
         row1_main_layout.addWidget(right_column, stretch=1)
 
