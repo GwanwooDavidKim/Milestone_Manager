@@ -57,12 +57,13 @@ class DataManager:
         """
         return self.data.get("milestones", [])
     
-    def add_milestone(self, title: str, subtitle: str) -> Dict:
+    def add_milestone(self, title: str, subtitle: str, category: str = "") -> Dict:
         """새로운 마일스톤을 추가합니다.
         
         Args:
             title (str): 마일스톤 제목
             subtitle (str): 마일스톤 부제목
+            category (str): 마일스톤 카테고리 (선택사항)
         
         Returns:
             Dict: 생성된 마일스톤 데이터
@@ -71,23 +72,26 @@ class DataManager:
             "id": self._generate_id(),
             "title": title,
             "subtitle": subtitle,
+            "category": category,
             "nodes": []
         }
         self.data["milestones"].append(milestone)
         return milestone
     
-    def update_milestone(self, milestone_id: str, title: str, subtitle: str) -> None:
+    def update_milestone(self, milestone_id: str, title: str, subtitle: str, category: str = "") -> None:
         """마일스톤을 수정합니다.
         
         Args:
             milestone_id (str): 마일스톤 ID
             title (str): 수정할 제목
             subtitle (str): 수정할 부제목
+            category (str): 수정할 카테고리 (선택사항)
         """
         for milestone in self.data["milestones"]:
             if milestone["id"] == milestone_id:
                 milestone["title"] = title
                 milestone["subtitle"] = subtitle
+                milestone["category"] = category
                 return
         raise ValueError(f"마일스톤을 찾을 수 없습니다: {milestone_id}")
     
