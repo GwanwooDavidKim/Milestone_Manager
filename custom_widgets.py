@@ -1440,3 +1440,189 @@ class ClickableKPICard(QFrame):
         
         dialog.setLayout(layout)
         dialog.exec()
+
+
+class MilestoneTreeDialog(ModernDialog):
+    """Milestone Tree 다이얼로그 - Category별로 마일스톤을 그룹화하여 표시"""
+    
+    milestone_selected = pyqtSignal(str)  # 선택된 마일스톤 ID
+    
+    def __init__(self, parent=None, milestones: List[Dict] = None):
+        super().__init__(parent, "🌳 Milestone Tree")
+        self.setFixedSize(1400, 900)
+        self.milestones = milestones or []
+        self.selected_milestone_id = None
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # 설명 레이블
+        desc_label = QLabel("카테고리별로 그룹화된 마일스톤을 확인하고 선택하세요")
+        desc_label.setStyleSheet("font-size: 13px; color: #86868b;")
+        layout.addWidget(desc_label)
+        
+        # 스크롤 영역
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        
+        scroll_content = QWidget()
+        scroll_layout = QHBoxLayout(scroll_content)
+        scroll_layout.setSpacing(15)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # 카테고리별로 그룹화
+        categories = {}
+        uncategorized = []
+        
+        for milestone in self.milestones:
+            category = milestone.get("category", "").strip()
+            if category:
+                if category not in categories:
+                    categories[category] = []
+                categories[category].append(milestone)
+            else:
+                uncategorized.append(milestone)
+        
+        # 카테고리가 있는 것들 먼저 표시
+        for category_name in sorted(categories.keys()):
+            category_widget = self._create_category_column(category_name, categories[category_name])
+            scroll_layout.addWidget(category_widget)
+        
+        # 카테고리 없는 것들 마지막에 표시
+        if uncategorized:
+            category_widget = self._create_category_column("미분류", uncategorized)
+            scroll_layout.addWidget(category_widget)
+        
+        scroll_layout.addStretch()
+        
+        scroll_area.setWidget(scroll_content)
+        layout.addWidget(scroll_area)
+        
+        # 닫기 버튼
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        close_btn = QPushButton("닫기")
+        close_btn.setObjectName("secondary")
+        close_btn.setFixedWidth(120)
+        close_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(close_btn)
+        
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
+    
+    def _create_category_column(self, category_name: str, milestones: List[Dict]) -> QWidget:
+        """카테고리 컬럼 생성"""
+        column = QWidget()
+        column.setFixedWidth(350)
+        column.setStyleSheet("""
+            QWidget {
+                background: white;
+                border: 2px solid #e8e8ed;
+                border-radius: 12px;
+            }
+        """)
+        
+        column_layout = QVBoxLayout(column)
+        column_layout.setContentsMargins(15, 15, 15, 15)
+        column_layout.setSpacing(10)
+        
+        # 카테고리 제목
+        title_label = QLabel(category_name)
+        title_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #1d1d1f;
+            padding: 8px;
+            background: #f5f5f7;
+            border-radius: 8px;
+        """)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        column_layout.addWidget(title_label)
+        
+        # 마일스톤 개수
+        count_label = QLabel(f"{len(milestones)}개 마일스톤")
+        count_label.setStyleSheet("font-size: 11px; color: #86868b; padding: 4px;")
+        count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        column_layout.addWidget(count_label)
+        
+        # 마일스톤 카드들
+        for milestone in milestones:
+            card = self._create_milestone_card(milestone)
+            column_layout.addWidget(card)
+        
+        column_layout.addStretch()
+        return column
+    
+    def _create_milestone_card(self, milestone: Dict) -> QWidget:
+        """마일스톤 카드 생성 (클릭 가능)"""
+        card = QPushButton()
+        card.setStyleSheet("""
+            QPushButton {
+                background: white;
+                border: 2px solid #d2d2d7;
+                border-radius: 10px;
+                padding: 12px;
+                text-align: left;
+            }
+            QPushButton:hover {
+                border: 2px solid #007AFF;
+                background: #F0F8FF;
+            }
+            QPushButton:pressed {
+                background: #E3F2FD;
+            }
+        """)
+        
+        # 카드 내용 레이아웃
+        card_layout = QVBoxLayout()
+        card_layout.setSpacing(5)
+        
+        # 제목
+        title_label = QLabel(milestone.get("title", ""))
+        title_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            color: #1d1d1f;
+            background: transparent;
+            border: none;
+        """)
+        title_label.setWordWrap(True)
+        card_layout.addWidget(title_label)
+        
+        # 부제목
+        subtitle = milestone.get("subtitle", "")
+        if subtitle:
+            subtitle_label = QLabel(subtitle)
+            subtitle_label.setStyleSheet("""
+                font-size: 11px;
+                color: #86868b;
+                background: transparent;
+                border: none;
+            """)
+            subtitle_label.setWordWrap(True)
+            card_layout.addWidget(subtitle_label)
+        
+        # 노드 개수
+        node_count = len(milestone.get("nodes", []))
+        node_label = QLabel(f"📊 {node_count}개 노드")
+        node_label.setStyleSheet("""
+            font-size: 10px;
+            color: #007AFF;
+            background: transparent;
+            border: none;
+        """)
+        card_layout.addWidget(node_label)
+        
+        card.setLayout(card_layout)
+        card.clicked.connect(lambda: self._on_milestone_clicked(milestone["id"]))
+        
+        return card
+    
+    def _on_milestone_clicked(self, milestone_id: str):
+        """마일스톤 카드 클릭 시"""
+        self.selected_milestone_id = milestone_id
+        self.milestone_selected.emit(milestone_id)
+        self.accept()  # 다이얼로그 닫기
