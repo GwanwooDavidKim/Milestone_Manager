@@ -1584,8 +1584,8 @@ class MilestoneTreeDialog(ModernDialog):
         
         # 카드 내용 레이아웃
         card_layout = QVBoxLayout()
-        card_layout.setSpacing(8)
-        card_layout.setContentsMargins(5, 5, 5, 5)
+        card_layout.setSpacing(12)
+        card_layout.setContentsMargins(8, 8, 8, 8)
         
         # 제목
         title_label = QLabel(milestone.get("title", ""))
@@ -1595,6 +1595,7 @@ class MilestoneTreeDialog(ModernDialog):
             color: #1d1d1f;
             background: transparent;
             border: none;
+            padding: 3px 0px;
         """)
         title_label.setWordWrap(True)
         card_layout.addWidget(title_label)
@@ -1608,6 +1609,7 @@ class MilestoneTreeDialog(ModernDialog):
                 color: #86868b;
                 background: transparent;
                 border: none;
+                padding: 3px 0px;
             """)
             subtitle_label.setWordWrap(True)
             card_layout.addWidget(subtitle_label)
@@ -1620,6 +1622,7 @@ class MilestoneTreeDialog(ModernDialog):
             color: #007AFF;
             background: transparent;
             border: none;
+            padding: 3px 0px;
         """)
         card_layout.addWidget(node_label)
         

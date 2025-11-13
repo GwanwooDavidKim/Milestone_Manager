@@ -227,12 +227,12 @@ class MainWindow(QMainWindow):
                     stop:0 #007AFF, stop:1 #0051D5);
                 color: white;
                 border: none;
-                border-radius: 12px;
-                padding: 15px 30px;
-                font-size: 15px;
+                border-radius: 10px;
+                padding: 10px 20px;
+                font-size: 14px;
                 font-weight: bold;
-                min-width: 200px;
-                min-height: 50px;
+                min-width: 180px;
+                min-height: 35px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
