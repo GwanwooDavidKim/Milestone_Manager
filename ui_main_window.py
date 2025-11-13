@@ -106,12 +106,17 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(15, 5, 15, 15)
         main_layout.setSpacing(1)
 
-        # ===== 행1: 제목 + 툴바 (고정 높이 150px) =====
+        # ===== 행1: 2열 레이아웃 (왼쪽: 제목+툴바, 오른쪽: Tree 버튼) =====
         row1_container = QWidget()
-        row1_container.setFixedHeight(50)
-        row1_layout = QVBoxLayout(row1_container)
-        row1_layout.setContentsMargins(0, 0, 0, 0)
-        row1_layout.setSpacing(1)
+        row1_main_layout = QHBoxLayout(row1_container)
+        row1_main_layout.setContentsMargins(0, 0, 0, 0)
+        row1_main_layout.setSpacing(15)
+        
+        # 왼쪽 열: 제목 + 툴바
+        left_column = QWidget()
+        left_column_layout = QVBoxLayout(left_column)
+        left_column_layout.setContentsMargins(0, 0, 0, 0)
+        left_column_layout.setSpacing(1)
 
         # 제목 + 데이터 상태
         header_layout = QHBoxLayout()
@@ -127,7 +132,7 @@ class MainWindow(QMainWindow):
         """)
         header_layout.addWidget(title_label)
 
-        # 데이터 상태 표시 레이블 (배경색 제거)
+        # 데이터 상태 표시 레이블
         self.data_status_label = QLabel("⚠️ 데이터 없음")
         self.data_status_label.setStyleSheet("""
             color: #FF9500;
@@ -138,8 +143,9 @@ class MainWindow(QMainWindow):
         header_layout.addWidget(self.data_status_label)
         header_layout.addStretch()
 
-        row1_layout.addLayout(header_layout)
+        left_column_layout.addLayout(header_layout)
 
+        # 툴바 (기존 버튼들)
         toolbar = QHBoxLayout()
         toolbar.setSpacing(4)
 
@@ -182,33 +188,6 @@ class MainWindow(QMainWindow):
 
         toolbar.addStretch()
 
-        # 🌳 Milestone Tree 버튼 (중앙, 눈에 띄는 디자인)
-        tree_btn = QPushButton("🌳 Milestone Tree")
-        tree_btn.setStyleSheet("""
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #007AFF, stop:1 #0051D5);
-                color: white;
-                border: none;
-                border-radius: 12px;
-                padding: 12px 24px;
-                font-size: 14px;
-                font-weight: bold;
-                min-width: 180px;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #1A8CFF, stop:1 #0062FF);
-            }
-            QPushButton:pressed {
-                background: #0051D5;
-            }
-        """)
-        tree_btn.clicked.connect(self._show_milestone_tree)
-        toolbar.addWidget(tree_btn)
-
-        toolbar.addStretch()
-
         # 필터 상태 표시 레이블
         self.filter_status_label = QLabel("")
         self.filter_status_label.setStyleSheet("""
@@ -230,8 +209,43 @@ class MainWindow(QMainWindow):
         self.clear_filter_btn.hide()
         toolbar.addWidget(self.clear_filter_btn)
 
-        row1_layout.addLayout(toolbar)
-        row1_layout.addStretch()
+        left_column_layout.addLayout(toolbar)
+        
+        row1_main_layout.addWidget(left_column, stretch=3)
+        
+        # 오른쪽 열: Milestone Tree 버튼만
+        right_column = QWidget()
+        right_column_layout = QVBoxLayout(right_column)
+        right_column_layout.setContentsMargins(0, 0, 0, 0)
+        right_column_layout.setSpacing(0)
+        right_column_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        tree_btn = QPushButton("🌳 Milestone Tree")
+        tree_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #007AFF, stop:1 #0051D5);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 15px 30px;
+                font-size: 15px;
+                font-weight: bold;
+                min-width: 200px;
+                min-height: 50px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1A8CFF, stop:1 #0062FF);
+            }
+            QPushButton:pressed {
+                background: #0051D5;
+            }
+        """)
+        tree_btn.clicked.connect(self._show_milestone_tree)
+        right_column_layout.addWidget(tree_btn)
+        
+        row1_main_layout.addWidget(right_column, stretch=1)
 
         main_layout.addWidget(row1_container, stretch=0)
 
