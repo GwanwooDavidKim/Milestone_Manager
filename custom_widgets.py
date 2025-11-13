@@ -1532,7 +1532,7 @@ class MilestoneTreeDialog(ModernDialog):
         
         column_layout = QVBoxLayout(column)
         column_layout.setContentsMargins(15, 15, 15, 15)
-        column_layout.setSpacing(10)
+        column_layout.setSpacing(5)
         
         # 카테고리 제목
         title_label = QLabel(category_name)
@@ -1563,29 +1563,28 @@ class MilestoneTreeDialog(ModernDialog):
     
     def _create_milestone_card(self, milestone: Dict) -> QWidget:
         """마일스톤 카드 생성 (클릭 가능)"""
-        card = QPushButton()
-        card.setMinimumHeight(100)
+        card = QFrame()
+        card.setMinimumHeight(110)
+        card.setCursor(Qt.CursorShape.PointingHandCursor)
         card.setStyleSheet("""
-            QPushButton {
+            QFrame {
                 background: white;
                 border: 2px solid #d2d2d7;
                 border-radius: 10px;
-                padding: 15px;
-                text-align: left;
             }
-            QPushButton:hover {
+            QFrame:hover {
                 border: 2px solid #007AFF;
                 background: #F0F8FF;
             }
-            QPushButton:pressed {
-                background: #E3F2FD;
-            }
         """)
         
+        # 마일스톤 ID 저장
+        card.milestone_id = milestone["id"]
+        
         # 카드 내용 레이아웃
-        card_layout = QVBoxLayout()
-        card_layout.setSpacing(12)
-        card_layout.setContentsMargins(8, 8, 8, 8)
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(10)
+        card_layout.setContentsMargins(12, 12, 12, 12)
         
         # 제목
         title_label = QLabel(milestone.get("title", ""))
@@ -1593,9 +1592,6 @@ class MilestoneTreeDialog(ModernDialog):
             font-size: 14px;
             font-weight: bold;
             color: #1d1d1f;
-            background: transparent;
-            border: none;
-            padding: 3px 0px;
         """)
         title_label.setWordWrap(True)
         card_layout.addWidget(title_label)
@@ -1607,9 +1603,6 @@ class MilestoneTreeDialog(ModernDialog):
             subtitle_label.setStyleSheet("""
                 font-size: 11px;
                 color: #86868b;
-                background: transparent;
-                border: none;
-                padding: 3px 0px;
             """)
             subtitle_label.setWordWrap(True)
             card_layout.addWidget(subtitle_label)
@@ -1620,14 +1613,13 @@ class MilestoneTreeDialog(ModernDialog):
         node_label.setStyleSheet("""
             font-size: 10px;
             color: #007AFF;
-            background: transparent;
-            border: none;
-            padding: 3px 0px;
         """)
         card_layout.addWidget(node_label)
         
-        card.setLayout(card_layout)
-        card.clicked.connect(lambda: self._on_milestone_clicked(milestone["id"]))
+        card_layout.addStretch()
+        
+        # 클릭 이벤트
+        card.mousePressEvent = lambda event: self._on_milestone_clicked(milestone["id"])
         
         return card
     
