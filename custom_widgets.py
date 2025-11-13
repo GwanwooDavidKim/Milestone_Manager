@@ -93,7 +93,7 @@ class MilestoneDialog(ModernDialog):
     
     def __init__(self, parent=None, milestone_data: Optional[Dict] = None):
         super().__init__(parent, "마일스톤 생성" if not milestone_data else "마일스톤 수정")
-        self.setFixedSize(500, 300)
+        self.setFixedSize(500, 380)
         self.result = None
         
         layout = QVBoxLayout()
@@ -119,6 +119,16 @@ class MilestoneDialog(ModernDialog):
         if milestone_data:
             self.subtitle_input.setText(milestone_data.get("subtitle", ""))
         layout.addWidget(self.subtitle_input)
+        
+        category_label = QLabel("카테고리")
+        category_label.setStyleSheet("margin-top: 15px;")
+        layout.addWidget(category_label)
+        self.category_input = QLineEdit()
+        self.category_input.setPlaceholderText("카테고리를 입력하세요 (선택사항)")
+        self.category_input.setMinimumHeight(45)
+        if milestone_data:
+            self.category_input.setText(milestone_data.get("category", ""))
+        layout.addWidget(self.category_input)
         
         layout.addSpacing(20)  # 버튼과 간격 추가
         
@@ -146,7 +156,8 @@ class MilestoneDialog(ModernDialog):
             return
         self.result = {
             "title": title,
-            "subtitle": self.subtitle_input.text().strip()
+            "subtitle": self.subtitle_input.text().strip(),
+            "category": self.category_input.text().strip()
         }
         self.accept()
 

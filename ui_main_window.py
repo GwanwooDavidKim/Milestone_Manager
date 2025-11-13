@@ -381,8 +381,11 @@ class MainWindow(QMainWindow):
         """마일스톤 생성"""
         dialog = MilestoneDialog(self)
         if dialog.exec() and dialog.result:
-            self.data_manager.add_milestone(dialog.result["title"],
-                                            dialog.result["subtitle"])
+            self.data_manager.add_milestone(
+                dialog.result["title"],
+                dialog.result["subtitle"],
+                dialog.result.get("category", "")
+            )
             self._refresh_ui()
 
     def delete_selected_milestones(self):
@@ -969,9 +972,12 @@ class MainWindow(QMainWindow):
         # 다이얼로그 열기
         dialog = MilestoneDialog(self, milestone_data=milestone)
         if dialog.exec() and dialog.result:
-            self.data_manager.update_milestone(milestone_id,
-                                               dialog.result["title"],
-                                               dialog.result["subtitle"])
+            self.data_manager.update_milestone(
+                milestone_id,
+                dialog.result["title"],
+                dialog.result["subtitle"],
+                dialog.result.get("category", "")
+            )
             self._refresh_ui()
 
     def _add_node_to_milestone(self, milestone_id: str):
