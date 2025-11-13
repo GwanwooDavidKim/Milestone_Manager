@@ -915,6 +915,21 @@ class MainWindow(QMainWindow):
 
         header.addLayout(title_layout, 1)
 
+        # 카테고리 표시 (제목/부제목 오른쪽, 버튼 왼쪽)
+        category_text = milestone.get("category", "")
+        if category_text:
+            category_label = QLabel(f"📁 {category_text}")
+            category_label.setStyleSheet("""
+                background: #E3F2FD;
+                color: #007AFF;
+                font-size: 11px;
+                font-weight: bold;
+                padding: 5px 12px;
+                border-radius: 12px;
+                border: 1px solid #007AFF;
+            """)
+            header.addWidget(category_label)
+
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(6)
 
@@ -977,27 +992,6 @@ class MainWindow(QMainWindow):
         header.addLayout(btn_layout)
 
         block_layout.addLayout(header)
-
-        # 카테고리 표시 (제목/부제목과 버튼들 사이)
-        category_text = milestone.get("category", "")
-        if category_text:
-            category_layout = QHBoxLayout()
-            category_layout.setContentsMargins(30, 5, 0, 5)
-            
-            category_label = QLabel(f"📁 {category_text}")
-            category_label.setStyleSheet("""
-                background: #E3F2FD;
-                color: #007AFF;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 5px 12px;
-                border-radius: 12px;
-                border: 1px solid #007AFF;
-            """)
-            category_layout.addWidget(category_label)
-            category_layout.addStretch()
-            
-            block_layout.addLayout(category_layout)
 
         timeline = TimelineCanvas(parent=block,
                                   milestone_data=milestone,
